@@ -1,0 +1,188 @@
+services:
+  user-postgres:
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-postgres}
+    volumes:
+      - user-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - smart-study
+
+  study-postgres:
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: study_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${STUDY_DB_PASSWORD:-postgres}
+    volumes:
+      - study-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d study_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - smart-study
+
+  quiz-postgres:
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: quiz_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${QUIZ_DB_PASSWORD:-postgres}
+    volumes:
+      - quiz-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d quiz_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - smart-study
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USER:-dineshjat18}/smart-study-user-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://user-postgres:5432/user_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${USER_DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=}
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
+    depends_on:
+      user-postgres:
+        condition: service_healthy
+    networks:
+      - smart-study
+
+  study-service:
+    build:
+      context: ./services/study-service
+      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USER:-dineshjat18}/smart-study-study-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://study-postgres:5432/study_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${STUDY_DB_PASSWORD:-postgres}
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
+    depends_on:
+      study-postgres:
+        condition: service_healthy
+    networks:
+      - smart-study
+
+  quiz-service:
+    build:
+      context: ./services/quiz-service
+      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USER:-dineshjat18}/smart-study-quiz-service:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://quiz-postgres:5432/quiz_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${QUIZ_DB_PASSWORD:-postgres}
+      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY:-dummy-key-for-local-dev}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://studyplanneragent-resource.openai.azure.com/openai/v1}
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
+    depends_on:
+      quiz-postgres:
+        condition: service_healthy
+    networks:
+      - smart-study
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USER:-dineshjat18}/smart-study-api-gateway:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      USER_SERVICE_URL: http://user-service:8081
+      STUDY_SERVICE_URL: http://study-service:8082
+      QUIZ_SERVICE_URL: http://quiz-service:8083
+      JWT_SECRET: ${JWT_SECRET:-MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=}
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
+    depends_on:
+      - user-service
+      - study-service
+      - quiz-service
+    networks:
+      - smart-study
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USER:-dineshjat18}/smart-study-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "30000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - smart-study
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - smart-study
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    restart: unless-stopped
+    environment:
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - smart-study
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  user-postgres-data:
+  study-postgres-data:
+  quiz-postgres-data:
+
+networks:
+  smart-study:
+    driver: bridge
