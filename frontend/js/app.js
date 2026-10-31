@@ -1322,6 +1322,13 @@ async function apiRequest(
 
 function showLoginPage() {
 
+    const authShell =
+        document.querySelector(".auth-shell");
+
+    if (authShell) {
+        authShell.classList.remove("hidden");
+    }
+
     loginSection.classList.remove("hidden");
     registerSection.classList.add("hidden");
 
@@ -1334,8 +1341,15 @@ function showLoginPage() {
 
 function showAuthenticatedPage() {
 
+    const authShell =
+        document.querySelector(".auth-shell");
+
+    if (authShell) {
+        authShell.classList.add("hidden");
+    }
+
     loginSection.classList.add("hidden");
-    registerSection.classList.add("hidden");
+    registerSection.classList.remove("hidden");
 
     dashboard.classList.remove("hidden");
     subjectsSection.classList.remove("hidden");
