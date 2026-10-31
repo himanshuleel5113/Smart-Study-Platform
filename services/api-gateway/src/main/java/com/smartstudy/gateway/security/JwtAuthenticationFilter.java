@@ -28,8 +28,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+
         return "GET".equalsIgnoreCase(request.getMethod())
-                && "/actuator/prometheus".equals(request.getRequestURI());
+                && ("/actuator/prometheus".equals(uri)
+                    || uri.startsWith("/actuator/health"));
     }
 
     @Override
