@@ -162,4 +162,30 @@ class QuizSubmissionControllerTest {
                 any(QuizSubmissionRequest.class)
         );
     }
+
+    @Test
+    void submitQuizShouldReturnBadRequestWithMessageForEmptyAnswers() throws Exception {
+
+        String requestJson = """
+                {
+                  "quizId": 10,
+                  "answers": []
+                }
+                """;
+
+        mockMvc.perform(
+                        post("/api/quiz-submissions")
+                                .param("userId", "1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestJson)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("At least one answer is required"));
+
+        verify(quizSubmissionService, never()).submitQuiz(
+                eq(1L),
+                any(QuizSubmissionRequest.class)
+        );
+    }
 }
