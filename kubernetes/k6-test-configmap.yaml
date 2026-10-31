@@ -57,3 +57,4 @@ data:
 kind: ConfigMap
 metadata:
   name: k6-test-script
+  namespace: smart-study
