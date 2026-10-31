@@ -1,5 +1,9 @@
-// When served behind Nginx on port 80, use relative paths. Otherwise direct to API Gateway :8080.
-const API_BASE_URL = (window.location.port === "80" || (window.location.port === "" && window.location.protocol !== "file:"))
+// When served by Nginx (port 80 locally, NodePort 30000 on Kubernetes), use
+// same-origin paths - Nginx proxies /api/ to the API Gateway. Otherwise
+// (e.g. "npx serve" without a proxy) talk to the API Gateway directly.
+const API_BASE_URL = (window.location.port === "80"
+        || window.location.port === "30000"
+        || (window.location.port === "" && window.location.protocol !== "file:"))
     ? ""
     : "http://localhost:8080";
 
