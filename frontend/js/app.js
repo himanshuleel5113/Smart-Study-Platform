@@ -107,6 +107,135 @@ let selectedQuiz = null;
 
 
 /* =========================================
+   Theme (light / dark)
+   ========================================= */
+
+(function initTheme() {
+
+    const savedTheme =
+        localStorage.getItem("theme");
+
+    if (savedTheme === "light" || savedTheme === "dark") {
+
+        document.documentElement.dataset.theme = savedTheme;
+    }
+
+    const themeToggle = document.getElementById("themeToggle");
+
+    if (themeToggle) {
+
+        themeToggle.addEventListener("click", () => {
+
+            const isDark =
+                document.documentElement.dataset.theme === "dark"
+                || (!document.documentElement.dataset.theme
+                    && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+            const nextTheme =
+                isDark ? "light" : "dark";
+
+            document.documentElement.dataset.theme = nextTheme;
+
+            localStorage.setItem("theme", nextTheme);
+        });
+    }
+})();
+
+
+/* =========================================
+   Toast notifications
+   ========================================= */
+
+function showToast(message, type = "info") {
+
+    const container =
+        document.getElementById("toastContainer");
+
+    if (!container) {
+        return;
+    }
+
+    const toast =
+        document.createElement("div");
+
+    toast.className = `toast toast-${type}`;
+
+    toast.setAttribute("role", "status");
+
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+
+        toast.classList.add("hide");
+
+        setTimeout(() => toast.remove(), 300);
+
+    }, 4200);
+}
+
+
+/* =========================================
+   Button loading state
+   ========================================= */
+
+function setButtonLoading(button, isLoading) {
+
+    if (!button) {
+        return;
+    }
+
+    button.classList.toggle("is-loading", isLoading);
+
+    button.disabled = isLoading;
+}
+
+
+function getFormButton(form) {
+
+    return form
+        ? form.querySelector('button[type="submit"]')
+        : null;
+}
+
+
+/* =========================================
+   Friendly error messages
+   ========================================= */
+
+function friendlyHttpMessage(status) {
+
+    switch (status) {
+
+        case 400:
+            return "The request was invalid. Please check your input and try again.";
+
+        case 401:
+            return "Your session has expired. Please log in again.";
+
+        case 403:
+            return "You do not have permission to perform this action.";
+
+        case 404:
+            return "The requested item was not found.";
+
+        case 502:
+            return "The AI service returned an unexpected response. Please try again.";
+
+        case 503:
+            return "A service is temporarily unavailable. Please try again shortly.";
+
+        case 504:
+            return "The service took too long to respond. Please try again.";
+
+        default:
+            return `Something went wrong (error ${status}). Please try again.`;
+    }
+}
+
+
+/* =========================================
    Application startup
    ========================================= */
 
@@ -163,12 +292,16 @@ loginForm.addEventListener("submit", async (event) => {
 
         showAuthenticatedPage();
 
+        showToast("Welcome back!", "success");
+
         await loadDashboard();
 
     } catch (error) {
 
         loginMessage.textContent =
             error.message;
+
+        showToast(error.message, "error");
     }
 });
 
@@ -220,10 +353,14 @@ registerForm.addEventListener(
             registerMessage.textContent =
                 "Registration successful. You can now log in.";
 
+            showToast("Account created - you can now log in.", "success");
+
         } catch (error) {
 
             registerMessage.textContent =
                 error.message;
+
+            showToast(error.message, "error");
         }
     }
 );
@@ -363,7 +500,7 @@ async function loadSubjects() {
     if (subjects.length === 0) {
 
         subjectsList.innerHTML =
-            "<p>No subjects found.</p>";
+            '<div class="empty-state">No subjects yet - add your first subject above.</div>';
 
         return;
     }
@@ -446,12 +583,16 @@ subjectForm.addEventListener(
             subjectMessage.textContent =
                 "Subject created successfully.";
 
+            showToast("Subject created.", "success");
+
             await loadSubjects();
 
         } catch (error) {
 
             subjectMessage.textContent =
                 error.message;
+
+            showToast(error.message, "error");
         }
     }
 );
@@ -498,6 +639,8 @@ studyStartForm.addEventListener(
             studyMessage.textContent =
                 "Study session started. 📚";
 
+            showToast("Study session started.", "success");
+
             await loadStudyStats();
             await loadStudyHistory();
 
@@ -505,6 +648,8 @@ studyStartForm.addEventListener(
 
             studyMessage.textContent =
                 error.message;
+
+            showToast(error.message, "error");
         }
     }
 );
@@ -532,6 +677,11 @@ stopStudyButton.addEventListener(
                     result.durationSeconds
                 )}`;
 
+            showToast(
+                `Session completed: ${formatDuration(result.durationSeconds)}`,
+                "success"
+            );
+
             await loadStudyStats();
             await loadStudyHistory();
 
@@ -539,6 +689,8 @@ stopStudyButton.addEventListener(
 
             studyMessage.textContent =
                 error.message;
+
+            showToast(error.message, "error");
         }
     }
 );
@@ -560,7 +712,7 @@ async function loadStudyHistory() {
     if (history.length === 0) {
 
         studyHistoryList.innerHTML =
-            "<p>No study sessions yet.</p>";
+            '<div class="empty-state">No study sessions yet - start one to begin tracking.</div>';
 
         return;
     }
@@ -635,12 +787,16 @@ quizForm.addEventListener(
             quizMessage.textContent =
                 "Quiz created successfully.";
 
+            showToast("Quiz created.", "success");
+
             await loadQuizzes();
 
         } catch (error) {
 
             quizMessage.textContent =
                 error.message;
+
+            showToast(error.message, "error");
         }
     }
 );
@@ -705,6 +861,8 @@ aiQuizForm.addEventListener(
             aiQuizMessage.textContent =
                 `AI quiz "${quiz.title}" created successfully.`;
 
+            showToast(`AI quiz "${quiz.title}" created.`, "success");
+
             await loadQuizzes();
 
             await openQuiz(
@@ -715,6 +873,8 @@ aiQuizForm.addEventListener(
 
             aiQuizMessage.textContent =
                 error.message;
+
+            showToast(error.message, "error");
         }
     }
 );
@@ -736,7 +896,7 @@ async function loadQuizzes() {
     if (quizzes.length === 0) {
 
         quizzesList.innerHTML =
-            "<p>No quizzes found.</p>";
+            '<div class="empty-state">No quizzes yet - create one manually or with AI.</div>';
 
         return;
     }
@@ -829,7 +989,7 @@ async function openQuiz(quizId) {
     if (questions.length === 0) {
 
         quizQuestionsList.innerHTML =
-            "<p>This quiz has no questions yet.</p>";
+            '<div class="empty-state">This quiz has no questions yet.</div>';
 
         submitQuizButton.classList.add("hidden");
         quizDetails.classList.remove("hidden");
@@ -970,12 +1130,19 @@ submitQuizButton.addEventListener(
                 `Result: ${result.score}/${result.totalQuestions} ` +
                 `(${result.percentage}%) 🎉`;
 
+            showToast(
+                `You scored ${result.score}/${result.totalQuestions} (${result.percentage}%)`,
+                "success"
+            );
+
             await loadAllQuizAttempts();
 
         } catch (error) {
 
             quizResultMessage.textContent =
                 error.message;
+
+            showToast(error.message, "error");
         }
     }
 );
@@ -997,7 +1164,7 @@ async function loadAllQuizAttempts() {
     if (attempts.length === 0) {
 
         quizAttemptsList.innerHTML =
-            "<p>No quiz attempts yet.</p>";
+            '<div class="empty-state">No quiz attempts yet - open a quiz and test yourself.</div>';
 
         return;
     }
@@ -1008,6 +1175,12 @@ async function loadAllQuizAttempts() {
             document.createElement("div");
 
         item.className = "list-item";
+
+        item.classList.add(
+            attempt.percentage >= 60
+                ? "attempt-good"
+                : "attempt-weak"
+        );
 
         const title =
             document.createElement("h3");
@@ -1077,11 +1250,27 @@ async function apiRequest(
             JSON.stringify(body);
     }
 
-    const response =
-        await fetch(
-            `${API_BASE_URL}${path}`,
-            fetchOptions
-        );
+    let response;
+
+    try {
+
+        response =
+            await fetch(
+                `${API_BASE_URL}${path}`,
+                fetchOptions
+            );
+
+    } catch (networkError) {
+
+        const error =
+            new Error(
+                "Cannot reach the server. Please check that the services are running and try again."
+            );
+
+        error.status = 0;
+
+        throw error;
+    }
 
     const contentType =
         response.headers.get(
@@ -1112,7 +1301,7 @@ async function apiRequest(
             typeof data === "object" &&
             data.message
                 ? data.message
-                : `Request failed with status ${response.status}`;
+                : friendlyHttpMessage(response.status);
 
         const error =
             new Error(errorMessage);

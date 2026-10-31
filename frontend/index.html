@@ -8,32 +8,82 @@
             content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Smart Study platform</title>
+    <meta
+            name="description"
+            content="Smart Study Platform - manage subjects, track study sessions, and take quizzes."
+    >
+
+    <title>Smart Study Platform</title>
 
     <link rel="stylesheet" href="css/style.css">
+
+    <link
+            rel="icon"
+            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M12 3 1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z'/%3E%3C/svg%3E"
+    >
 </head>
 
 <body>
 
 <header class="topbar">
-    <div class="container">
-        <h1>Smart Study platform</h1>
 
-        <nav>
+    <div class="container topbar-inner">
+
+        <a
+                class="brand"
+                href="#dashboard"
+                aria-label="Smart Study Platform home"
+        >
+
+            <svg
+                    class="brand-mark"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+            >
+                <path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
+            </svg>
+
+            <span>Smart Study <em>Platform</em></span>
+
+        </a>
+
+        <nav aria-label="Main navigation">
+
             <a href="#dashboard">Dashboard</a>
             <a href="#subjects">Subjects</a>
             <a href="#study">Study</a>
             <a href="#quizzes">Quizzes</a>
 
             <button
+                    id="themeToggle"
+                    class="theme-toggle"
+                    type="button"
+                    aria-label="Toggle dark mode"
+                    title="Toggle dark mode"
+            >
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM2 13h2a1 1 0 0 0 0-2H2a1 1 0 0 0 0 2zm18 0h2a1 1 0 0 0 0-2h-2a1 1 0 0 0 0 2zM11 2v2a1 1 0 0 0 2 0V2a1 1 0 0 0-2 0zm0 18v2a1 1 0 0 0 2 0v-2a1 1 0 0 0-2 0zM5.99 4.58a1 1 0 0 0-1.41 1.41l1.06 1.06a1 1 0 0 0 1.41-1.41L5.99 4.58zm12.37 12.37a1 1 0 0 0-1.41 1.41l1.06 1.06a1 1 0 0 0 1.41-1.41l-1.06-1.06zm1.06-10.96a1 1 0 0 0-1.41-1.41l-1.06 1.06a1 1 0 0 0 1.41 1.41l1.06-1.06zM7.05 18.36a1 1 0 0 0-1.41-1.41l-1.06 1.06a1 1 0 0 0 1.41 1.41l1.06-1.06z"/>
+                </svg>
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12.3 22a9.9 9.9 0 0 1-7.05-2.95A9.93 9.93 0 0 1 2.3 12a9.94 9.94 0 0 1 2.95-7.05A9.9 9.9 0 0 1 12.3 2h.5a1 1 0 0 1 .96 1.28 6 6 0 0 0 1.66 6.02 6 6 0 0 0 6.02 1.66 1 1 0 0 1 1.28.96v.58a9.93 9.93 0 0 1-2.95 7.05A9.9 9.9 0 0 1 12.8 22h-.5z"/>
+                </svg>
+            </button>
+
+            <button
                     id="logoutButton"
                     class="logout-button"
+                    type="button"
             >
                 Logout
             </button>
+
         </nav>
+
     </div>
+
 </header>
+
 
 <main class="container">
 
@@ -41,123 +91,190 @@
     <!-- Authentication             -->
     <!-- ========================= -->
 
-    <section id="loginSection" class="card">
+    <div class="auth-shell">
 
-        <h2>Welcome Back 👋</h2>
+        <aside class="auth-brand" aria-hidden="true">
 
-        <p>
-            Login to continue your study journey.
-        </p>
+            <h2>Study smarter, not longer.</h2>
 
-        <form id="loginForm">
+            <p>
+                One place for your subjects, focused study sessions,
+                and quizzes that show exactly how far you have come.
+            </p>
 
-            <label for="loginEmail">
-                Email
-            </label>
+            <ul class="feature-list">
 
-            <input
-                    id="loginEmail"
-                    type="email"
-                    placeholder="Enter your email"
-                    required
+                <li>
+                    <span class="feature-icon" data-icon="clock"></span>
+                    Track every study session
+                </li>
+
+                <li>
+                    <span class="feature-icon" data-icon="book"></span>
+                    Organise all your subjects
+                </li>
+
+                <li>
+                    <span class="feature-icon" data-icon="spark"></span>
+                    Practise with AI-generated quizzes
+                </li>
+
+                <li>
+                    <span class="feature-icon" data-icon="chart"></span>
+                    See your progress over time
+                </li>
+
+            </ul>
+
+        </aside>
+
+        <div class="auth-forms">
+
+            <section
+                    id="loginSection"
+                    class="card auth-card"
             >
 
-            <label for="loginPassword">
-                Password
-            </label>
+                <h2>Welcome back 👋</h2>
 
-            <input
-                    id="loginPassword"
-                    type="password"
-                    placeholder="Enter your password"
-                    required
+                <p class="card-subtitle">
+                    Login to continue your study journey.
+                </p>
+
+                <form id="loginForm">
+
+                    <label for="loginEmail">
+                        Email
+                    </label>
+
+                    <input
+                            id="loginEmail"
+                            type="email"
+                            placeholder="you@example.com"
+                            autocomplete="email"
+                            required
+                    >
+
+                    <label for="loginPassword">
+                        Password
+                    </label>
+
+                    <input
+                            id="loginPassword"
+                            type="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                    >
+
+                    <button type="submit" class="button-primary">
+                        Login
+                    </button>
+
+                </form>
+
+                <p
+                        id="loginMessage"
+                        class="message"
+                        aria-live="polite"
+                ></p>
+
+                <p class="auth-switch">
+                    New here?
+
+                    <button
+                            id="showRegisterButton"
+                            type="button"
+                            class="link-button"
+                    >
+                        Create an account
+                    </button>
+
+                </p>
+
+            </section>
+
+
+            <section
+                    id="registerSection"
+                    class="card auth-card hidden"
             >
 
-            <button type="submit">
-                Login
-            </button>
+                <h2>Create your account 🚀</h2>
 
-        </form>
+                <p class="card-subtitle">
+                    Start tracking your study progress today.
+                </p>
 
-        <p id="loginMessage" class="message"></p>
+                <form id="registerForm">
 
-        <button
-                id="showRegisterButton"
-                type="button"
-        >
-            Create an account
-        </button>
+                    <label for="registerName">
+                        Name
+                    </label>
 
-    </section>
+                    <input
+                            id="registerName"
+                            type="text"
+                            placeholder="Enter your name"
+                            autocomplete="name"
+                            required
+                    >
 
+                    <label for="registerEmail">
+                        Email
+                    </label>
 
-    <!-- ========================= -->
-    <!-- Registration               -->
-    <!-- ========================= -->
+                    <input
+                            id="registerEmail"
+                            type="email"
+                            placeholder="you@example.com"
+                            autocomplete="email"
+                            required
+                    >
 
-    <section
-            id="registerSection"
-            class="card hidden"
-    >
+                    <label for="registerPassword">
+                        Password
+                    </label>
 
-        <h2>Create Account 🚀</h2>
+                    <input
+                            id="registerPassword"
+                            type="password"
+                            placeholder="Minimum 8 characters"
+                            autocomplete="new-password"
+                            minlength="8"
+                            required
+                    >
 
-        <p>
-            Create your Smart Study account.
-        </p>
+                    <button type="submit" class="button-primary">
+                        Register
+                    </button>
 
-        <form id="registerForm">
+                </form>
 
-            <label for="registerName">
-                Name
-            </label>
+                <p
+                        id="registerMessage"
+                        class="message"
+                        aria-live="polite"
+                ></p>
 
-            <input
-                    id="registerName"
-                    type="text"
-                    placeholder="Enter your name"
-                    required
-            >
+                <p class="auth-switch">
+                    Already have an account?
 
-            <label for="registerEmail">
-                Email
-            </label>
+                    <button
+                            id="showLoginButton"
+                            type="button"
+                            class="link-button"
+                    >
+                        Back to Login
+                    </button>
 
-            <input
-                    id="registerEmail"
-                    type="email"
-                    placeholder="Enter your email"
-                    required
-            >
+                </p>
 
-            <label for="registerPassword">
-                Password
-            </label>
+            </section>
 
-            <input
-                    id="registerPassword"
-                    type="password"
-                    placeholder="Minimum 8 characters"
-                    minlength="8"
-                    required
-            >
+        </div>
 
-            <button type="submit">
-                Register
-            </button>
-
-        </form>
-
-        <p id="registerMessage" class="message"></p>
-
-        <button
-                id="showLoginButton"
-                type="button"
-        >
-            Back to Login
-        </button>
-
-    </section>
+    </div>
 
 
     <!-- ========================= -->
@@ -166,7 +283,7 @@
 
     <section id="dashboard" class="hidden">
 
-        <div class="dashboard-header">
+        <div class="dashboard-header hero">
 
             <div>
 
@@ -187,7 +304,9 @@
 
         <div class="stats-grid">
 
-            <div class="stat-card">
+            <div class="stat-card stat-indigo">
+
+                <span class="stat-icon" data-icon="clock"></span>
 
                 <h3>Total Study Time</h3>
 
@@ -198,7 +317,9 @@
             </div>
 
 
-            <div class="stat-card">
+            <div class="stat-card stat-emerald">
+
+                <span class="stat-icon" data-icon="check"></span>
 
                 <h3>Study Sessions</h3>
 
@@ -209,7 +330,9 @@
             </div>
 
 
-            <div class="stat-card">
+            <div class="stat-card stat-amber">
+
+                <span class="stat-icon" data-icon="spark"></span>
 
                 <h3>Average Session</h3>
 
@@ -230,50 +353,64 @@
 
     <section
             id="subjects"
-            class="hidden"
+            class="hidden app-section"
     >
 
         <div class="section-header">
 
             <h2>My Subjects</h2>
 
+            <p>Everything you are studying, in one place.</p>
+
         </div>
 
 
-        <div class="card">
+        <div class="card form-card">
 
             <h3>Add Subject</h3>
 
-            <form id="subjectForm">
+            <form id="subjectForm" class="inline-form">
 
-                <label for="subjectName">
-                    Subject Name
-                </label>
+                <div class="field">
 
-                <input
-                        id="subjectName"
-                        type="text"
-                        placeholder="Example: Java"
-                        required
-                >
+                    <label for="subjectName">
+                        Subject Name
+                    </label>
 
-                <label for="subjectDescription">
-                    Description
-                </label>
+                    <input
+                            id="subjectName"
+                            type="text"
+                            placeholder="Example: Java"
+                            required
+                    >
 
-                <input
-                        id="subjectDescription"
-                        type="text"
-                        placeholder="Short description"
-                >
+                </div>
 
-                <button type="submit">
+                <div class="field">
+
+                    <label for="subjectDescription">
+                        Description
+                    </label>
+
+                    <input
+                            id="subjectDescription"
+                            type="text"
+                            placeholder="Short description"
+                    >
+
+                </div>
+
+                <button type="submit" class="button-primary">
                     Add Subject
                 </button>
 
             </form>
 
-            <p id="subjectMessage" class="message"></p>
+            <p
+                    id="subjectMessage"
+                    class="message"
+                    aria-live="polite"
+            ></p>
 
         </div>
 
@@ -294,61 +431,71 @@
 
     <section
             id="study"
-            class="hidden"
+            class="hidden app-section"
     >
 
         <div class="section-header">
 
             <h2>Study Session</h2>
 
+            <p>Start a focused session, stop it when you are done.</p>
+
         </div>
 
 
-        <div class="card">
+        <div class="study-grid">
 
-            <h3>Start a Study Session</h3>
+            <div class="card form-card">
 
-            <form id="studyStartForm">
+                <h3>Start a Study Session</h3>
 
-                <label for="studySubjectId">
-                    Subject
-                </label>
+                <form id="studyStartForm">
 
-                <select id="studySubjectId" required>
-                    <option value="">
-                        Select a subject
-                    </option>
-                </select>
+                    <label for="studySubjectId">
+                        Subject
+                    </label>
 
-                <button type="submit">
-                    Start Session
+                    <select id="studySubjectId" required>
+                        <option value="">
+                            Select a subject
+                        </option>
+                    </select>
+
+                    <button type="submit" class="button-primary">
+                        Start Session
+                    </button>
+
+                </form>
+
+
+                <button
+                        id="stopStudyButton"
+                        type="button"
+                        class="button-danger"
+                >
+                    Stop Current Session
                 </button>
 
-            </form>
+                <p
+                        id="studyMessage"
+                        class="message"
+                        aria-live="polite"
+                ></p>
+
+            </div>
 
 
-            <button
-                    id="stopStudyButton"
-                    type="button"
-                    class="logout-button"
-            >
-                Stop Current Session
-            </button>
+            <div class="card">
 
-            <p
-                    id="studyMessage"
-                    class="message"
-            ></p>
+                <h3>Study History</h3>
 
-        </div>
+                <div
+                        id="studyHistoryList"
+                        class="list-container compact"
+                >
+                    <p>No study history loaded.</p>
+                </div>
 
-
-        <div class="card">
-
-            <h3>Study History</h3>
-
-            <div id="studyHistoryList">
-                <p>No study history loaded.</p>
             </div>
 
         </div>
@@ -362,126 +509,139 @@
 
     <section
             id="quizzes"
-            class="hidden"
+            class="hidden app-section"
     >
 
         <div class="section-header">
 
             <h2>Quizzes</h2>
 
-        </div>
-
-
-        <!-- Manual quiz -->
-
-        <div class="card">
-
-            <h3>Create Manual Quiz</h3>
-
-            <form id="quizForm">
-
-                <label for="quizTitle">
-                    Quiz Title
-                </label>
-
-                <input
-                        id="quizTitle"
-                        type="text"
-                        placeholder="Example: Java Basics"
-                        required
-                >
-
-                <label for="quizDescription">
-                    Description
-                </label>
-
-                <input
-                        id="quizDescription"
-                        type="text"
-                        placeholder="Short description"
-                >
-
-                <button type="submit">
-                    Create Quiz
-                </button>
-
-            </form>
-
-            <p id="quizMessage" class="message"></p>
+            <p>Create your own quizzes, or let AI generate one for you.</p>
 
         </div>
 
 
-        <!-- AI quiz -->
+        <div class="quiz-create-grid">
 
-        <div class="card">
+            <!-- Manual quiz -->
 
-            <h3>Generate AI Quiz 🤖</h3>
+            <div class="card form-card">
 
-            <form id="aiQuizForm">
+                <h3>Create Manual Quiz</h3>
 
-                <label for="aiTopic">
-                    Topic
-                </label>
+                <form id="quizForm">
 
-                <input
-                        id="aiTopic"
-                        type="text"
-                        placeholder="Example: Java OOP"
-                        required
-                >
+                    <label for="quizTitle">
+                        Quiz Title
+                    </label>
 
-                <label for="aiQuestionCount">
-                    Number of Questions
-                </label>
-
-                <input
-                        id="aiQuestionCount"
-                        type="number"
-                        min="1"
-                        max="20"
-                        value="5"
-                        required
-                >
-
-                <label for="aiDifficulty">
-                    Difficulty
-                </label>
-
-                <select id="aiDifficulty" required>
-
-                    <option value="easy">
-                        Easy
-                    </option>
-
-                    <option
-                            value="medium"
-                            selected
+                    <input
+                            id="quizTitle"
+                            type="text"
+                            placeholder="Example: Java Basics"
+                            required
                     >
-                        Medium
-                    </option>
 
-                    <option value="hard">
-                        Hard
-                    </option>
+                    <label for="quizDescription">
+                        Description
+                    </label>
 
-                </select>
+                    <input
+                            id="quizDescription"
+                            type="text"
+                            placeholder="Short description"
+                    >
 
-                <button type="submit">
-                    Generate Quiz
-                </button>
+                    <button type="submit" class="button-primary">
+                        Create Quiz
+                    </button>
 
-            </form>
+                </form>
 
-            <p
-                    id="aiQuizMessage"
-                    class="message"
-            ></p>
+                <p
+                        id="quizMessage"
+                        class="message"
+                        aria-live="polite"
+                ></p>
+
+            </div>
+
+
+            <!-- AI quiz -->
+
+            <div class="card form-card ai-card">
+
+                <h3>Generate AI Quiz 🤖</h3>
+
+                <form id="aiQuizForm">
+
+                    <label for="aiTopic">
+                        Topic
+                    </label>
+
+                    <input
+                            id="aiTopic"
+                            type="text"
+                            placeholder="Example: Java OOP"
+                            required
+                    >
+
+                    <label for="aiQuestionCount">
+                        Number of Questions
+                    </label>
+
+                    <input
+                            id="aiQuestionCount"
+                            type="number"
+                            min="1"
+                            max="20"
+                            value="5"
+                            required
+                    >
+
+                    <label for="aiDifficulty">
+                        Difficulty
+                    </label>
+
+                    <select id="aiDifficulty" required>
+
+                        <option value="easy">
+                            Easy
+                        </option>
+
+                        <option
+                                value="medium"
+                                selected
+                        >
+                            Medium
+                        </option>
+
+                        <option value="hard">
+                            Hard
+                        </option>
+
+                    </select>
+
+                    <button type="submit" class="button-primary">
+                        Generate Quiz
+                    </button>
+
+                </form>
+
+                <p
+                        id="aiQuizMessage"
+                        class="message"
+                        aria-live="polite"
+                ></p>
+
+            </div>
 
         </div>
 
 
         <!-- Quiz list -->
+
+        <h3 class="list-title">Available Quizzes</h3>
 
         <div
                 id="quizzesList"
@@ -495,20 +655,21 @@
 
         <div
                 id="quizDetails"
-                class="card hidden"
+                class="card quiz-details hidden"
         >
 
             <h3 id="quizDetailsTitle">
                 Quiz
             </h3>
 
-            <p id="quizDetailsDescription"></p>
+            <p id="quizDetailsDescription" class="card-subtitle"></p>
 
-            <div id="quizQuestionsList"></div>
+            <div id="quizQuestionsList" class="questions-list"></div>
 
             <button
                     id="submitQuizButton"
                     type="button"
+                    class="button-primary"
             >
                 Submit Quiz
             </button>
@@ -516,6 +677,7 @@
             <p
                     id="quizResultMessage"
                     class="message"
+                    aria-live="polite"
             ></p>
 
         </div>
@@ -527,7 +689,10 @@
 
             <h3>Quiz Attempt History</h3>
 
-            <div id="quizAttemptsList">
+            <div
+                    id="quizAttemptsList"
+                    class="list-container compact"
+            >
                 <p>No attempts loaded.</p>
             </div>
 
@@ -540,15 +705,26 @@
 
 <footer>
 
-    <div class="container">
+    <div class="container footer-inner">
 
         <p>
             Smart Study Platform
         </p>
 
+        <p class="footer-tech">
+            Java 21 · Spring Boot · PostgreSQL · Docker · Kubernetes · Prometheus &amp; Grafana
+        </p>
+
     </div>
 
 </footer>
+
+
+<div
+        id="toastContainer"
+        class="toast-container"
+        aria-live="polite"
+></div>
 
 
 <script src="js/app.js"></script>
