@@ -1078,10 +1078,12 @@ function enterApp() {
 
     renderUserChip();
 
-    window.location.hash =
-        "#dashboard";
+    if (!window.location.hash || window.location.hash === "#") {
+        window.location.hash =
+            "#dashboard";
+    }
 
-    showView("dashboard");
+    routeFromHash();
 }
 
 
