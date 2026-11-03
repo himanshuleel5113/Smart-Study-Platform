@@ -1220,44 +1220,51 @@ function subjectSeconds(subjectId) {
         );
 }
 
+function populateSubjectSelect() {
+
+    const select =
+        $("studySubjectId");
+
+    if (!select) {
+        return;
+    }
+
+    const previous =
+        select.value;
+
+    select.innerHTML =
+        '<option value="">Select a subject</option>';
+
+    state.subjects.forEach((subject) => {
+
+        const option =
+            document.createElement("option");
+
+        option.value =
+            subject.id;
+
+        option.textContent =
+            subject.name;
+
+        select.appendChild(option);
+    });
+
+    // restore the previous selection when it still exists
+    if (previous && state.subjects.some((s) => String(s.id) === previous)) {
+
+        select.value =
+            previous;
+    }
+}
+
+
 function renderSubjects() {
 
     const grid =
         $("subjectsGrid");
 
     // Keep the study-session dropdown in sync with the subject list
-    const select =
-        $("studySubjectId");
-
-    if (select) {
-
-        const previous =
-            select.value;
-
-        select.innerHTML =
-            '<option value="">Select a subject</option>';
-
-        state.subjects.forEach((subject) => {
-
-            const option =
-                document.createElement("option");
-
-            option.value =
-                subject.id;
-
-            option.textContent =
-                subject.name;
-
-            select.appendChild(option);
-        });
-
-        // restore the previous selection when it still exists
-        if (previous && state.subjects.some((s) => String(s.id) === previous)) {
-
-            select.value =
-                previous;
-        }
-    }
+    populateSubjectSelect();
 
     if (!grid) {
         return;
@@ -1651,6 +1658,8 @@ function renderTimerState() {
 }
 
 function refreshStudy() {
+
+    populateSubjectSelect();
 
     detectRunningSession();
 
