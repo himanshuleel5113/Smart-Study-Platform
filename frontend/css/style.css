@@ -1447,6 +1447,22 @@ textarea.input {
     background: var(--banner-grad);
 
     padding: 30px 32px;
+
+    /* The banner gradient stays light in both themes,
+       so its text must always be dark for contrast. */
+    color: #1e1b4b;
+}
+
+.wave-banner h1,
+.wave-banner h2,
+.wave-banner h3 {
+    color: #1e1b4b;
+}
+
+.wave-banner p,
+.wave-banner .page-sub,
+.wave-banner strong {
+    color: #37316b;
 }
 
 .wave-banner::after {
