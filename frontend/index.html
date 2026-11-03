@@ -15,28 +15,64 @@
 
     <title>Smart Study Platform</title>
 
+    <link
+            rel="preconnect"
+            href="https://fonts.googleapis.com"
+    >
+
+    <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossorigin
+    >
+
+    <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+    >
+
     <link rel="stylesheet" href="css/style.css">
 
     <link
             rel="icon"
-            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M12 3 1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z'/%3E%3C/svg%3E"
+            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'%3E%3Cpath d='M12 3 1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z'/%3E%3C/svg%3E"
     >
 </head>
 
 <body>
 
-<header class="topbar">
+<!-- ============================================================
+     Toasts + modal root
+     ============================================================ -->
 
-    <div class="container topbar-inner">
+<div
+        id="toastContainer"
+        class="toast-container"
+        aria-live="polite"
+></div>
+
+<div
+        id="modalRoot"
+        class="hidden"
+></div>
+
+
+<!-- ============================================================
+     AUTH (Login / Register)
+     ============================================================ -->
+
+<div id="authShell" class="auth-shell">
+
+    <header class="auth-topbar">
 
         <a
-                class="brand"
-                href="#dashboard"
-                aria-label="Smart Study Platform home"
+                class="brand-lockup"
+                href="#"
+                style="display:inline-flex;align-items:center;gap:10px;color:var(--text);text-decoration:none;font-weight:700;font-size:17px;"
         >
 
             <svg
-                    class="brand-mark"
+                    style="width:30px;height:30px;color:var(--indigo);"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                     aria-hidden="true"
@@ -44,130 +80,279 @@
                 <path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
             </svg>
 
-            <span>Smart Study <em>Platform</em></span>
+            Smart Study&nbsp;<span style="color:var(--indigo);">Platform</span>
 
         </a>
 
-        <nav aria-label="Main navigation">
+        <div class="auth-note">
 
-            <a href="#dashboard">Dashboard</a>
-            <a href="#subjects">Subjects</a>
-            <a href="#study">Study</a>
-            <a href="#quizzes">Quizzes</a>
+            <span id="authTopNote">Already have an account?</span>
 
             <button
-                    id="themeToggle"
-                    class="theme-toggle"
+                    id="showLoginButton"
                     type="button"
-                    aria-label="Toggle dark mode"
-                    title="Toggle dark mode"
+                    class="btn btn-outline"
+                    style="padding:8px 16px;"
             >
-                <svg class="icon-sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM2 13h2a1 1 0 0 0 0-2H2a1 1 0 0 0 0 2zm18 0h2a1 1 0 0 0 0-2h-2a1 1 0 0 0 0 2zM11 2v2a1 1 0 0 0 2 0V2a1 1 0 0 0-2 0zm0 18v2a1 1 0 0 0 2 0v-2a1 1 0 0 0-2 0zM5.99 4.58a1 1 0 0 0-1.41 1.41l1.06 1.06a1 1 0 0 0 1.41-1.41L5.99 4.58zm12.37 12.37a1 1 0 0 0-1.41 1.41l1.06 1.06a1 1 0 0 0 1.41-1.41l-1.06-1.06zm1.06-10.96a1 1 0 0 0-1.41-1.41l-1.06 1.06a1 1 0 0 0 1.41 1.41l1.06-1.06zM7.05 18.36a1 1 0 0 0-1.41-1.41l-1.06 1.06a1 1 0 0 0 1.41 1.41l1.06-1.06z"/>
-                </svg>
-                <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M12.3 22a9.9 9.9 0 0 1-7.05-2.95A9.93 9.93 0 0 1 2.3 12a9.94 9.94 0 0 1 2.95-7.05A9.9 9.9 0 0 1 12.3 2h.5a1 1 0 0 1 .96 1.28 6 6 0 0 0 1.66 6.02 6 6 0 0 0 6.02 1.66 1 1 0 0 1 1.28.96v.58a9.93 9.93 0 0 1-2.95 7.05A9.9 9.9 0 0 1 12.8 22h-.5z"/>
-                </svg>
+                Login →
             </button>
 
-            <button
-                    id="logoutButton"
-                    class="logout-button"
-                    type="button"
-            >
-                Logout
-            </button>
+        </div>
 
-        </nav>
+    </header>
 
-    </div>
+    <div class="auth-page">
 
-</header>
+        <aside class="auth-brand">
 
+            <h1 id="authBrandTitle">
+                Create your account 🚀
+            </h1>
 
-<main class="container">
-
-    <!-- ========================= -->
-    <!-- Authentication             -->
-    <!-- ========================= -->
-
-    <div class="auth-shell">
-
-        <aside class="auth-brand" aria-hidden="true">
-
-            <h2>Study smarter, not longer.</h2>
-
-            <p>
-                One place for your subjects, focused study sessions,
-                and quizzes that show exactly how far you have come.
+            <p id="authBrandSub">
+                Start tracking your study progress today.
             </p>
 
-            <ul class="feature-list">
+            <ul class="auth-features">
 
                 <li>
-                    <span class="feature-icon" data-icon="clock"></span>
-                    Track every study session
+                    <span class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg>
+                    </span>
+                    Organise your subjects
                 </li>
 
                 <li>
-                    <span class="feature-icon" data-icon="book"></span>
-                    Organise all your subjects
+                    <span class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg>
+                    </span>
+                    Track your study progress
                 </li>
 
                 <li>
-                    <span class="feature-icon" data-icon="spark"></span>
-                    Practise with AI-generated quizzes
+                    <span class="feature-icon">🏆</span>
+                    Take quizzes and improve
                 </li>
 
                 <li>
-                    <span class="feature-icon" data-icon="chart"></span>
-                    See your progress over time
+                    <span class="feature-icon">⚡</span>
+                    Achieve your goals
                 </li>
 
             </ul>
+
+            <div
+                    class="auth-illustration"
+                    aria-hidden="true"
+            >
+
+                <svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg">
+
+                    <circle
+                            cx="70" cy="60" r="46"
+                            fill="#c7d2fe" opacity="0.45"
+                    />
+
+                    <circle
+                            cx="360" cy="40" r="30"
+                            fill="#ddd6fe" opacity="0.5"
+                    />
+
+                    <!-- desk -->
+                    <rect
+                            x="40" y="212" width="340" height="12" rx="6"
+                            fill="#8b80f9"
+                    />
+
+                    <rect
+                            x="56" y="224" width="12" height="30" rx="4"
+                            fill="#6d63f0"
+                    />
+
+                    <rect
+                            x="352" y="224" width="12" height="30" rx="4"
+                            fill="#6d63f0"
+                    />
+
+                    <!-- laptop -->
+                    <rect
+                            x="236" y="150" width="112" height="62" rx="7"
+                            fill="#312e81"
+                    />
+
+                    <rect
+                            x="244" y="158" width="96" height="46" rx="4"
+                            fill="#a5b4fc"
+                    />
+
+                    <rect
+                            x="222" y="206" width="140" height="9" rx="4.5"
+                            fill="#1e1b4b"
+                    />
+
+                    <!-- books -->
+                    <rect
+                            x="60" y="192" width="64" height="10" rx="4"
+                            fill="#4f46e5"
+                    />
+
+                    <rect
+                            x="66" y="180" width="52" height="10" rx="4"
+                            fill="#8b5cf6"
+                    />
+
+                    <rect
+                            x="72" y="168" width="42" height="10" rx="4"
+                            fill="#c4b5fd"
+                    />
+
+                    <!-- plant -->
+                    <path
+                            d="M398 206c0-22-12-34-26-38 2 16 8 30 26 38z"
+                            fill="#34d399"
+                    />
+
+                    <path
+                            d="M398 206c0-18 10-28 22-32-2 14-8 26-22 32z"
+                            fill="#10b981"
+                    />
+
+                    <rect
+                            x="386" y="204" width="24" height="16" rx="4"
+                            fill="#7c3aed"
+                    />
+
+                    <!-- student -->
+                    <circle
+                            cx="158" cy="112" r="26"
+                            fill="#fcd7b8"
+                    />
+
+                    <path
+                            d="M136 100c2-16 42-18 44 0-6-8-38-8-44 0z"
+                            fill="#1e1b4b"
+                    />
+
+                    <path
+                            d="M120 176c4-32 26-44 38-44s34 12 38 44z"
+                            fill="#6366f1"
+                    />
+
+                    <path
+                            d="M158 132l18 22-18 14-18-14z"
+                            fill="#eef2ff"
+                    />
+
+                    <!-- bulb -->
+                    <circle
+                            cx="306" cy="96" r="20"
+                            fill="#fcd34d"
+                    />
+
+                    <rect
+                            x="299" y="114" width="14" height="9" rx="3"
+                            fill="#f59e0b"
+                    />
+
+                    <path
+                            d="M306 68v-8M326 76l6-6M286 76l-6-6"
+                            stroke="#f59e0b"
+                            stroke-width="4"
+                            stroke-linecap="round"
+                    />
+
+                </svg>
+
+            </div>
 
         </aside>
 
         <div class="auth-forms">
 
+            <!-- ============ LOGIN ============ -->
+
             <section
                     id="loginSection"
-                    class="card auth-card"
+                    class="auth-card"
             >
 
-                <h2>Welcome back 👋</h2>
+                <div class="auth-avatar">
 
-                <p class="card-subtitle">
-                    Login to continue your study journey.
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 1.79-8 4v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2c0-2.21-3.58-4-8-4z"/>
+                    </svg>
+
+                </div>
+
+                <h2>Login</h2>
+
+                <p class="auth-sub">
+                    Fill in your details to continue your study journey.
                 </p>
 
                 <form id="loginForm">
 
-                    <label for="loginEmail">
-                        Email
-                    </label>
+                    <div>
 
-                    <input
-                            id="loginEmail"
-                            type="email"
-                            placeholder="you@example.com"
-                            autocomplete="email"
-                            required
+                        <label for="loginEmail">Email</label>
+
+                        <div class="input-wrap">
+
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+
+                            <input
+                                    id="loginEmail"
+                                    class="input"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    autocomplete="email"
+                                    required
+                            >
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label for="loginPassword">Password</label>
+
+                        <div class="input-wrap">
+
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6zm4 9.72V18h-2v-2.28a2 2 0 1 1 2 0z"/>
+                            </svg>
+
+                            <input
+                                    id="loginPassword"
+                                    class="input"
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    autocomplete="current-password"
+                                    required
+                            >
+
+                            <button
+                                    type="button"
+                                    class="eye-toggle"
+                                    data-eye="loginPassword"
+                                    aria-label="Show or hide password"
+                            >
+                                <svg style="width:17px;height:17px;" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7zm0 11.5A4.5 4.5 0 1 1 16.5 12 4.5 4.5 0 0 1 12 16.5zm0-7a2.5 2.5 0 1 0 2.5 2.5A2.5 2.5 0 0 0 12 9.5z"/>
+                                </svg>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary btn-block"
                     >
-
-                    <label for="loginPassword">
-                        Password
-                    </label>
-
-                    <input
-                            id="loginPassword"
-                            type="password"
-                            placeholder="Enter your password"
-                            autocomplete="current-password"
-                            required
-                    >
-
-                    <button type="submit" class="button-primary">
                         Login
                     </button>
 
@@ -189,67 +374,164 @@
                     >
                         Create an account
                     </button>
-
                 </p>
 
             </section>
 
 
+            <!-- ============ REGISTER ============ -->
+
             <section
                     id="registerSection"
-                    class="card auth-card hidden"
+                    class="auth-card hidden"
             >
 
-                <h2>Create your account 🚀</h2>
+                <div class="auth-avatar">
 
-                <p class="card-subtitle">
-                    Start tracking your study progress today.
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M15 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2zm9 4c-3.34 0-8 1.67-8 5v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1c0-3.33-4.66-5-8-5z"/>
+                    </svg>
+
+                </div>
+
+                <h2>Register Account</h2>
+
+                <p class="auth-sub">
+                    Fill in the details below to get started.
                 </p>
 
                 <form id="registerForm">
 
-                    <label for="registerName">
-                        Name
-                    </label>
+                    <div>
 
-                    <input
-                            id="registerName"
-                            type="text"
-                            placeholder="Enter your name"
-                            autocomplete="name"
-                            required
+                        <label for="registerName">Name</label>
+
+                        <div class="input-wrap">
+
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 1.79-8 4v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2c0-2.21-3.58-4-8-4z"/>
+                            </svg>
+
+                            <input
+                                    id="registerName"
+                                    class="input"
+                                    type="text"
+                                    placeholder="Enter your name"
+                                    autocomplete="name"
+                                    required
+                            >
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label for="registerEmail">Email</label>
+
+                        <div class="input-wrap">
+
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+
+                            <input
+                                    id="registerEmail"
+                                    class="input"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    autocomplete="email"
+                                    required
+                            >
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label for="registerPassword">Password</label>
+
+                        <div class="input-wrap">
+
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6zm4 9.72V18h-2v-2.28a2 2 0 1 1 2 0z"/>
+                            </svg>
+
+                            <input
+                                    id="registerPassword"
+                                    class="input"
+                                    type="password"
+                                    placeholder="Minimum 8 characters"
+                                    autocomplete="new-password"
+                                    minlength="8"
+                                    required
+                            >
+
+                            <button
+                                    type="button"
+                                    class="eye-toggle"
+                                    data-eye="registerPassword"
+                                    aria-label="Show or hide password"
+                            >
+                                <svg style="width:17px;height:17px;" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7zm0 11.5A4.5 4.5 0 1 1 16.5 12 4.5 4.5 0 0 1 12 16.5zm0-7a2.5 2.5 0 1 0 2.5 2.5A2.5 2.5 0 0 0 12 9.5z"/>
+                                </svg>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary btn-block"
                     >
-
-                    <label for="registerEmail">
-                        Email
-                    </label>
-
-                    <input
-                            id="registerEmail"
-                            type="email"
-                            placeholder="you@example.com"
-                            autocomplete="email"
-                            required
-                    >
-
-                    <label for="registerPassword">
-                        Password
-                    </label>
-
-                    <input
-                            id="registerPassword"
-                            type="password"
-                            placeholder="Minimum 8 characters"
-                            autocomplete="new-password"
-                            minlength="8"
-                            required
-                    >
-
-                    <button type="submit" class="button-primary">
                         Register
                     </button>
 
                 </form>
+
+                <div class="auth-divider">
+                    or continue with
+                </div>
+
+                <div class="oauth-row">
+
+                    <button
+                            type="button"
+                            class="btn btn-outline"
+                            disabled
+                            title="Coming soon"
+                    >
+                        <svg style="width:17px;height:17px;" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.3-2.2H12v4.1h6.5c-.1 1.1-.8 2.7-2.4 3.8l-.02.15 3.5 2.7.24.02c2.2-2 3.5-5 3.5-8.6z"/>
+                            <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.8-2.9c-1 .7-2.4 1.2-4.1 1.2-3.2 0-5.8-2.1-6.8-5l-.14.01-3.6 2.8-.05.13C3.9 21.3 7.6 24 12 24z"/>
+                            <path fill="#FBBC05" d="M5.2 14.4c-.25-.74-.4-1.53-.4-2.4s.15-1.66.4-2.4l-.01-.16-3.7-2.85-.12.06A11.9 11.9 0 0 0 0 12c0 1.94.47 3.77 1.3 5.4z"/>
+                            <path fill="#EA4335" d="M12 4.6c2.3 0 3.8 1 4.7 1.8l3.4-3.3C18 1.2 15.2 0 12 0 7.6 0 3.9 2.7 1.3 6.6l3.8 2.9C6.1 6.7 8.8 4.6 12 4.6z"/>
+                        </svg>
+
+                        Google
+                    </button>
+
+                    <button
+                            type="button"
+                            class="btn btn-outline"
+                            disabled
+                            title="Coming soon"
+                    >
+                        <svg style="width:17px;height:17px;" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M12 .5A11.5 11.5 0 0 0 .5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.54-3.87-1.54-.53-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.53-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.24 2.76.12 3.05.74.81 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.25 5.67.41.36.78 1.05.78 2.12v3.15c0 .31.2.68.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/>
+                        </svg>
+
+                        GitHub
+                    </button>
+
+                </div>
+
+                <p class="auth-terms">
+                    By registering, you agree to our Terms &amp; Conditions and Privacy Policy.
+                </p>
 
                 <p
                         id="registerMessage"
@@ -261,13 +543,12 @@
                     Already have an account?
 
                     <button
-                            id="showLoginButton"
+                            id="showLoginButton2"
                             type="button"
                             class="link-button"
                     >
                         Back to Login
                     </button>
-
                 </p>
 
             </section>
@@ -276,455 +557,1947 @@
 
     </div>
 
-
-    <!-- ========================= -->
-    <!-- Authenticated Application  -->
-    <!-- ========================= -->
-
-    <section id="dashboard" class="hidden">
-
-        <div class="dashboard-header hero">
-
-            <div>
-
-                <h2 id="welcomeMessage">
-                    Welcome!
-                </h2>
-
-                <p>
-                    Track your study time and quiz performance.
-                </p>
-
-            </div>
-
-        </div>
+</div>
 
 
-        <!-- Dashboard statistics -->
+<!-- ============================================================
+     APP SHELL (Sidebar + Top bar + Views)
+     ============================================================ -->
 
-        <div class="stats-grid">
+<div
+        id="appShell"
+        class="app-shell hidden"
+>
 
-            <div class="stat-card stat-indigo">
+    <!-- ============ SIDEBAR ============ -->
 
-                <span class="stat-icon" data-icon="clock"></span>
-
-                <h3>Total Study Time</h3>
-
-                <p id="totalStudyTime">
-                    0 min
-                </p>
-
-            </div>
-
-
-            <div class="stat-card stat-emerald">
-
-                <span class="stat-icon" data-icon="check"></span>
-
-                <h3>Study Sessions</h3>
-
-                <p id="totalSessions">
-                    0
-                </p>
-
-            </div>
-
-
-            <div class="stat-card stat-amber">
-
-                <span class="stat-icon" data-icon="spark"></span>
-
-                <h3>Average Session</h3>
-
-                <p id="averageSession">
-                    0 min
-                </p>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- ========================= -->
-    <!-- Subjects                   -->
-    <!-- ========================= -->
-
-    <section
-            id="subjects"
-            class="hidden app-section"
+    <aside
+            id="sidebar"
+            class="sidebar"
+            aria-label="Main navigation"
     >
 
-        <div class="section-header">
-
-            <h2>My Subjects</h2>
-
-            <p>Everything you are studying, in one place.</p>
-
-        </div>
-
-
-        <div class="card form-card">
-
-            <h3>Add Subject</h3>
-
-            <form id="subjectForm" class="inline-form">
-
-                <div class="field">
-
-                    <label for="subjectName">
-                        Subject Name
-                    </label>
-
-                    <input
-                            id="subjectName"
-                            type="text"
-                            placeholder="Example: Java"
-                            required
-                    >
-
-                </div>
-
-                <div class="field">
-
-                    <label for="subjectDescription">
-                        Description
-                    </label>
-
-                    <input
-                            id="subjectDescription"
-                            type="text"
-                            placeholder="Short description"
-                    >
-
-                </div>
-
-                <button type="submit" class="button-primary">
-                    Add Subject
-                </button>
-
-            </form>
-
-            <p
-                    id="subjectMessage"
-                    class="message"
-                    aria-live="polite"
-            ></p>
-
-        </div>
-
-
-        <div
-                id="subjectsList"
-                class="list-container"
-        >
-            <p>Loading subjects...</p>
-        </div>
-
-    </section>
-
-
-    <!-- ========================= -->
-    <!-- Study Sessions             -->
-    <!-- ========================= -->
-
-    <section
-            id="study"
-            class="hidden app-section"
-    >
-
-        <div class="section-header">
-
-            <h2>Study Session</h2>
-
-            <p>Start a focused session, stop it when you are done.</p>
-
-        </div>
-
-
-        <div class="study-grid">
-
-            <div class="card form-card">
-
-                <h3>Start a Study Session</h3>
-
-                <form id="studyStartForm">
-
-                    <label for="studySubjectId">
-                        Subject
-                    </label>
-
-                    <select id="studySubjectId" required>
-                        <option value="">
-                            Select a subject
-                        </option>
-                    </select>
-
-                    <button type="submit" class="button-primary">
-                        Start Session
-                    </button>
-
-                </form>
-
-
-                <button
-                        id="stopStudyButton"
-                        type="button"
-                        class="button-danger"
-                >
-                    Stop Current Session
-                </button>
-
-                <p
-                        id="studyMessage"
-                        class="message"
-                        aria-live="polite"
-                ></p>
-
-            </div>
-
-
-            <div class="card">
-
-                <h3>Study History</h3>
-
-                <div
-                        id="studyHistoryList"
-                        class="list-container compact"
-                >
-                    <p>No study history loaded.</p>
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- ========================= -->
-    <!-- Quizzes                    -->
-    <!-- ========================= -->
-
-    <section
-            id="quizzes"
-            class="hidden app-section"
-    >
-
-        <div class="section-header">
-
-            <h2>Quizzes</h2>
-
-            <p>Create your own quizzes, or let AI generate one for you.</p>
-
-        </div>
-
-
-        <div class="quiz-create-grid">
-
-            <!-- Manual quiz -->
-
-            <div class="card form-card">
-
-                <h3>Create Manual Quiz</h3>
-
-                <form id="quizForm">
-
-                    <label for="quizTitle">
-                        Quiz Title
-                    </label>
-
-                    <input
-                            id="quizTitle"
-                            type="text"
-                            placeholder="Example: Java Basics"
-                            required
-                    >
-
-                    <label for="quizDescription">
-                        Description
-                    </label>
-
-                    <input
-                            id="quizDescription"
-                            type="text"
-                            placeholder="Short description"
-                    >
-
-                    <button type="submit" class="button-primary">
-                        Create Quiz
-                    </button>
-
-                </form>
-
-                <p
-                        id="quizMessage"
-                        class="message"
-                        aria-live="polite"
-                ></p>
-
-            </div>
-
-
-            <!-- AI quiz -->
-
-            <div class="card form-card ai-card">
-
-                <h3>Generate AI Quiz 🤖</h3>
-
-                <form id="aiQuizForm">
-
-                    <label for="aiTopic">
-                        Topic
-                    </label>
-
-                    <input
-                            id="aiTopic"
-                            type="text"
-                            placeholder="Example: Java OOP"
-                            required
-                    >
-
-                    <label for="aiQuestionCount">
-                        Number of Questions
-                    </label>
-
-                    <input
-                            id="aiQuestionCount"
-                            type="number"
-                            min="1"
-                            max="20"
-                            value="5"
-                            required
-                    >
-
-                    <label for="aiDifficulty">
-                        Difficulty
-                    </label>
-
-                    <select id="aiDifficulty" required>
-
-                        <option value="easy">
-                            Easy
-                        </option>
-
-                        <option
-                                value="medium"
-                                selected
-                        >
-                            Medium
-                        </option>
-
-                        <option value="hard">
-                            Hard
-                        </option>
-
-                    </select>
-
-                    <button type="submit" class="button-primary">
-                        Generate Quiz
-                    </button>
-
-                </form>
-
-                <p
-                        id="aiQuizMessage"
-                        class="message"
-                        aria-live="polite"
-                ></p>
-
-            </div>
-
-        </div>
-
-
-        <!-- Quiz list -->
-
-        <h3 class="list-title">Available Quizzes</h3>
-
-        <div
-                id="quizzesList"
-                class="list-container"
-        >
-            <p>Loading quizzes...</p>
-        </div>
-
-
-        <!-- Quiz details -->
-
-        <div
-                id="quizDetails"
-                class="card quiz-details hidden"
+        <a
+                class="sidebar-brand"
+                href="#dashboard"
         >
 
-            <h3 id="quizDetailsTitle">
-                Quiz
-            </h3>
+            <span class="brand-badge">
 
-            <p id="quizDetailsDescription" class="card-subtitle"></p>
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
+                </svg>
 
-            <div id="quizQuestionsList" class="questions-list"></div>
+            </span>
+
+            <span>Smart Study<br>Platform</span>
+
+        </a>
+
+        <nav class="sidebar-nav">
 
             <button
-                    id="submitQuizButton"
+                    class="sidebar-item active"
                     type="button"
-                    class="button-primary"
+                    data-view="dashboard"
             >
-                Submit Quiz
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>
+                </svg>
+                Dashboard
             </button>
 
-            <p
-                    id="quizResultMessage"
-                    class="message"
-                    aria-live="polite"
-            ></p>
+            <button
+                    class="sidebar-item"
+                    type="button"
+                    data-view="subjects"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M2 4h7a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H22z"/>
+                </svg>
+                Subjects
+            </button>
+
+            <button
+                    class="sidebar-item"
+                    type="button"
+                    data-view="study"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+                </svg>
+                Study Sessions
+            </button>
+
+            <button
+                    class="sidebar-item"
+                    type="button"
+                    data-view="quizzes"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9.5 9a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8"/><path d="M12 16.5h.01"/>
+                </svg>
+                Quizzes
+            </button>
+
+            <button
+                    class="sidebar-item"
+                    type="button"
+                    data-view="results"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M6 20V12"/><path d="M12 20V6"/><path d="M18 20v-8"/>
+                </svg>
+                Results
+            </button>
+
+            <button
+                    class="sidebar-item"
+                    type="button"
+                    data-view="profile"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/>
+                </svg>
+                Profile
+            </button>
+
+            <button
+                    class="sidebar-item"
+                    type="button"
+                    data-view="settings"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/>
+                </svg>
+                Settings
+            </button>
+
+        </nav>
+
+        <div class="sidebar-spacer"></div>
+
+        <div class="sidebar-cta">
+
+            <span class="cta-emoji">🚀</span>
+
+            <strong>Keep Going!</strong>
+
+            <p>Small steps lead to great results.</p>
 
         </div>
 
+        <button
+                id="logoutButton"
+                class="sidebar-logout"
+                type="button"
+        >
 
-        <!-- Attempt history -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+            </svg>
 
-        <div class="card">
+            Logout
 
-            <h3>Quiz Attempt History</h3>
+        </button>
 
-            <div
-                    id="quizAttemptsList"
-                    class="list-container compact"
+    </aside>
+
+    <div
+            id="sidebarBackdrop"
+            class="sidebar-backdrop hidden"
+    ></div>
+
+
+    <!-- ============ MAIN AREA ============ -->
+
+    <div class="main-area">
+
+        <header class="topbar">
+
+            <button
+                    id="sidebarToggle"
+                    class="sidebar-toggle"
+                    type="button"
+                    aria-label="Toggle menu"
             >
-                <p>No attempts loaded.</p>
+
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+
+            </button>
+
+            <div class="search-pill">
+
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+                </svg>
+
+                <input
+                        id="globalSearch"
+                        type="search"
+                        placeholder="Search subjects, quizzes..."
+                        aria-label="Search current page"
+                >
+
             </div>
 
-        </div>
+            <div class="topbar-spacer"></div>
 
-    </section>
+            <button
+                    id="notificationBell"
+                    class="bell-btn"
+                    type="button"
+                    title="Notifications coming soon"
+                    aria-label="Notifications"
+            >
 
-</main>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+                </svg>
+
+                <span class="dot"></span>
+
+            </button>
+
+            <button
+                    id="userChip"
+                    class="user-chip"
+                    type="button"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+            >
+
+                <span
+                        id="userAvatar"
+                        class="user-avatar"
+                >H</span>
+
+                <span
+                        id="userDisplayName"
+                        class="user-name"
+                >…</span>
+
+                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+
+            </button>
+
+            <div
+                    id="userMenu"
+                    class="user-menu hidden"
+            >
+
+                <button
+                        type="button"
+                        data-view="profile"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>
+                    My Profile
+                </button>
+
+                <button
+                        type="button"
+                        data-view="settings"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+                    Settings
+                </button>
+
+                <button
+                        id="menuLogoutButton"
+                        type="button"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+                    Logout
+                </button>
+
+            </div>
+
+        </header>
+
+        <main id="mainContent">
+
+            <!-- ============ DASHBOARD ============ -->
+
+            <section
+                    id="view-dashboard"
+                    class="view"
+            >
+
+                <div class="wave-banner welcome-banner">
+
+                    <div>
+
+                        <h1 id="welcomeMessage">
+                            Welcome back! 👋
+                        </h1>
+
+                        <p class="welcome-sub">
+                            Continue your study journey and achieve your goals.
+                        </p>
+
+                        <button
+                                id="dashboardStartStudying"
+                                type="button"
+                                class="btn btn-primary"
+                        >
+                            Start Studying →
+                        </button>
+
+                    </div>
+
+                    <div
+                            class="banner-art"
+                            aria-hidden="true"
+                    >
+
+                        <svg viewBox="0 0 190 120" xmlns="http://www.w3.org/2000/svg">
+
+                            <circle
+                                    cx="160" cy="18" r="12"
+                                    fill="#fcd34d"
+                            />
+
+                            <path
+                                    d="M160 2v-6M172 6l4-5M148 6l-4-5"
+                                    stroke="#f59e0b"
+                                    stroke-width="3"
+                                    stroke-linecap="round"
+                            />
+
+                            <rect
+                                    x="98" y="72" width="70" height="34" rx="4"
+                                    fill="#312e81"
+                            />
+
+                            <rect
+                                    x="103" y="77" width="60" height="24" rx="2"
+                                    fill="#a5b4fc"
+                            />
+
+                            <circle
+                                    cx="58" cy="52" r="14"
+                                    fill="#fcd7b8"
+                            />
+
+                            <path
+                                    d="M47 46c1-9 22-10 23 0-4-4-20-4-23 0z"
+                                    fill="#1e1b4b"
+                            />
+
+                            <path
+                                    d="M36 86c2-17 14-24 22-24s20 7 22 24z"
+                                    fill="#4f46e5"
+                            />
+
+                            <rect
+                                    x="20" y="104" width="150" height="7" rx="3.5"
+                                    fill="#6d63f0"
+                            />
+
+                            <path
+                                    d="M178 104c0-12-7-19-15-21 1 9 5 16 15 21z"
+                                    fill="#34d399"
+                            />
+
+                            <rect
+                                    x="170" y="102" width="15" height="9" rx="3"
+                                    fill="#7c3aed"
+                            />
+
+                        </svg>
+
+                    </div>
+
+                </div>
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <span class="stat-icon indigo">
+
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 10.41V7a1 1 0 0 0-2 0v6a1 1 0 0 0 .55.89l3 1.5a1 1 0 0 0 .9-1.78L13 12.41z"/></svg>
+
+                        </span>
+
+                        <div>
+
+                            <div class="stat-label">Total Study Time</div>
+
+                            <div
+                                    id="totalStudyTime"
+                                    class="stat-value"
+                            >
+                                —
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="stat-card">
+
+                        <span class="stat-icon green">
+
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+
+                        </span>
+
+                        <div>
+
+                            <div class="stat-label">Study Sessions</div>
+
+                            <div
+                                    id="totalSessions"
+                                    class="stat-value"
+                            >
+                                0
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="stat-card">
+
+                        <span class="stat-icon star">⭐</span>
+
+                        <div>
+
+                            <div class="stat-label">Average Score</div>
+
+                            <div
+                                    id="averageScore"
+                                    class="stat-value"
+                            >
+                                —
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="dash-cols">
+
+                    <div class="card">
+
+                        <h3>Quick Actions</h3>
+
+                        <p class="card-sub">Jump straight into studying.</p>
+
+                        <div class="quick-grid">
+
+                            <button
+                                    id="quickAddSubject"
+                                    type="button"
+                                    class="quick-action"
+                            >
+                                <span class="qa-icon" style="background:var(--indigo-soft);">📚</span>
+                                Add Subject
+                            </button>
+
+                            <button
+                                    id="quickStartStudy"
+                                    type="button"
+                                    class="quick-action"
+                            >
+                                <span class="qa-icon" style="background:var(--success-soft);">▶️</span>
+                                Start Study Session
+                            </button>
+
+                            <button
+                                    id="quickTakeQuiz"
+                                    type="button"
+                                    class="quick-action"
+                            >
+                                <span class="qa-icon" style="background:var(--info-soft);">📝</span>
+                                Take Quiz
+                            </button>
+
+                            <button
+                                    id="quickAiQuiz"
+                                    type="button"
+                                    class="quick-action"
+                            >
+                                <span class="qa-icon" style="background:var(--star-soft);">✨</span>
+                                Generate AI Quiz
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div
+                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"
+                        >
+
+                            <h3 style="margin-bottom:0;">Recent Activity</h3>
+
+                            <button
+                                    id="recentActivityAll"
+                                    type="button"
+                                    class="link-button"
+                                    style="font-size:12.5px;"
+                            >
+                                View All →
+                            </button>
+
+                        </div>
+
+                        <div
+                                id="recentActivityList"
+                                class="activity-list"
+                        >
+                            <div class="empty-state">Loading activity...</div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="next-session-bar">
+
+                    <span class="ns-icon">📅</span>
+
+                    <div>
+
+                        <strong>Upcoming Study Session</strong>
+
+                        <p>Stay consistent! Your next session can help you improve even more.</p>
+
+                    </div>
+
+                    <button
+                            id="nextSessionStart"
+                            type="button"
+                            class="btn btn-primary"
+                    >
+                        ▶ Start Session
+                    </button>
+
+                </div>
+
+            </section>
 
 
-<footer>
+            <!-- ============ SUBJECTS ============ -->
 
-    <div class="container footer-inner">
+            <section
+                    id="view-subjects"
+                    class="view hidden"
+            >
 
-        <p>
-            Smart Study Platform
-        </p>
+                <div class="page-head">
 
-        <p class="footer-tech">
-            Java 21 · Spring Boot · PostgreSQL · Docker · Kubernetes · Prometheus &amp; Grafana
-        </p>
+                    <div class="page-head-left">
+
+                        <span class="page-icon">
+
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg>
+
+                        </span>
+
+                        <div>
+
+                            <h1>My Subjects</h1>
+
+                            <p class="page-sub">Organise your subjects and track your progress.</p>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                            id="addSubjectBtn"
+                            type="button"
+                            class="btn btn-primary"
+                    >
+                        + Add Subject
+                    </button>
+
+                </div>
+
+                <div
+                        id="subjectsGrid"
+                        class="subjects-grid"
+                >
+                    <div class="empty-state">Loading subjects...</div>
+                </div>
+
+                <div class="wave-banner" style="display:flex;align-items:center;gap:16px;padding:18px 24px;">
+
+                    <span style="font-size:26px;">💡</span>
+
+                    <p style="font-size:13.5px;color:var(--text);">
+
+                        <strong>Pro Tip:</strong>
+
+                        <span style="color:var(--text-muted);">Complete quizzes regularly to strengthen your concepts.</span>
+
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============ STUDY SESSIONS ============ -->
+
+            <section
+                    id="view-study"
+                    class="view hidden"
+            >
+
+                <div class="page-head">
+
+                    <div class="page-head-left">
+
+                        <span class="page-icon">
+
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+
+                        </span>
+
+                        <div>
+
+                            <h1>Study Sessions</h1>
+
+                            <p class="page-sub">Focus on your goals. Track your progress.</p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="study-cols">
+
+                    <div class="timer-card">
+
+                        <div class="timer-stage">
+
+                            <div class="timer-left">
+
+                                <span class="focus-label">Focus Mode</span>
+
+                                <div
+                                        id="sessionTimer"
+                                        class="timer-display"
+                                >
+                                    25:00
+                                </div>
+
+                                <span
+                                        id="timerStatePill"
+                                        class="timer-mode"
+                                >
+                                    Pomodoro Timer
+                                </span>
+
+                                <div class="timer-btns">
+
+                                    <button
+                                            id="startSessionBtn"
+                                            class="play-btn"
+                                            type="button"
+                                            aria-label="Start session"
+                                    >
+
+                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+
+                                    </button>
+
+                                    <button
+                                            id="stopStudyButton"
+                                            class="play-btn stop hidden"
+                                            type="button"
+                                            aria-label="Stop session"
+                                    >
+
+                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <rect x="6" y="6" width="12" height="12" rx="2"/>
+                                        </svg>
+
+                                    </button>
+
+                                    <button
+                                            id="resetTimerBtn"
+                                            class="btn-icon"
+                                            type="button"
+                                            title="Reset the timer display"
+                                            aria-label="Reset timer display"
+                                    >
+
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>
+                                        </svg>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <div class="timer-right">
+
+                                <form
+                                        id="studyStartForm"
+                                        style="display:grid;gap:14px;"
+                                >
+
+                                    <div>
+
+                                        <label for="studySubjectId">Select Subject</label>
+
+                                        <select
+                                                id="studySubjectId"
+                                                class="input"
+                                                required
+                                        >
+                                            <option value="">
+                                                Select a subject
+                                            </option>
+                                        </select>
+
+                                    </div>
+
+                                    <button
+                                            type="submit"
+                                            class="btn btn-primary btn-block"
+                                    >
+                                        ▶ Start Session
+                                    </button>
+
+                                </form>
+
+                                <p
+                                        id="studyMessage"
+                                        class="message"
+                                        style="text-align:left;margin-top:0;"
+                                        aria-live="polite"
+                                ></p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="timer-stats">
+
+                            <div class="timer-stat">
+
+                                <span class="ts-icon">🕐</span>
+
+                                <div>
+
+                                    <div class="ts-label">Study Time</div>
+
+                                    <div
+                                            id="statStudyTime"
+                                            class="ts-value"
+                                    >
+                                        —
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div class="timer-stat">
+
+                                <span class="ts-icon">🎯</span>
+
+                                <div>
+
+                                    <div class="ts-label">Today</div>
+
+                                    <div
+                                            id="statToday"
+                                            class="ts-value"
+                                    >
+                                        0 sessions
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div class="timer-stat">
+
+                                <span class="ts-icon">📅</span>
+
+                                <div>
+
+                                    <div class="ts-label">Total Sessions</div>
+
+                                    <div
+                                            id="statTotal"
+                                            class="ts-value"
+                                    >
+                                        0
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <h3>Quick Actions</h3>
+
+                        <p class="card-sub">Everything on this page, one click away.</p>
+
+                        <div class="quick-list">
+
+                            <button
+                                    type="button"
+                                    class="quick-link"
+                                    data-view="subjects"
+                            >
+                                <span class="ql-icon" style="background:var(--indigo-soft);">➕</span>
+                                <span>
+                                    <strong>Add Subject</strong>
+                                    <span>Manage your subjects</span>
+                                </span>
+                                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+
+                            <button
+                                    type="button"
+                                    class="quick-link"
+                                    data-view="results"
+                            >
+                                <span class="ql-icon" style="background:var(--success-soft);">📊</span>
+                                <span>
+                                    <strong>View Results</strong>
+                                    <span>Track your performance</span>
+                                </span>
+                                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+
+                            <button
+                                    type="button"
+                                    class="quick-link"
+                                    data-view="quizzes"
+                            >
+                                <span class="ql-icon" style="background:var(--danger-soft);">❓</span>
+                                <span>
+                                    <strong>Take a Quiz</strong>
+                                    <span>Test your knowledge</span>
+                                </span>
+                                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <h3>Study History</h3>
+
+                    <p class="card-sub">Your recent study sessions.</p>
+
+                    <div
+                            id="studyHistoryList"
+                            class="table-wrap"
+                    >
+                        <div class="empty-state">Loading history...</div>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============ QUIZ MANAGEMENT ============ -->
+
+            <section
+                    id="view-quizzes"
+                    class="view hidden"
+            >
+
+                <div class="page-head">
+
+                    <div class="page-head-left">
+
+                        <span class="page-icon">
+
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9.5 9a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8"/><path d="M12 16.5h.01"/>
+                            </svg>
+
+                        </span>
+
+                        <div>
+
+                            <h1>Quiz Management</h1>
+
+                            <p class="page-sub">Create and take quizzes to test your knowledge.</p>
+
+                        </div>
+
+                    </div>
+
+                    <span
+                            class="page-icon emoji"
+                            aria-hidden="true"
+                    >🏆</span>
+
+                </div>
+
+                <div class="quiz-create-grid">
+
+                    <div class="card">
+
+                        <h3>📝 Create Manual Quiz</h3>
+
+                        <p class="card-sub">Add your own quiz for any topic.</p>
+
+                        <form id="quizForm">
+
+                            <div>
+
+                                <label for="quizTitle">Quiz Title</label>
+
+                                <input
+                                        id="quizTitle"
+                                        class="input"
+                                        type="text"
+                                        placeholder="Enter quiz title"
+                                        required
+                                >
+
+                            </div>
+
+                            <div>
+
+                                <label for="quizDescription">Description</label>
+
+                                <input
+                                        id="quizDescription"
+                                        class="input"
+                                        type="text"
+                                        placeholder="Short description"
+                                >
+
+                            </div>
+
+                            <button
+                                    type="submit"
+                                    class="btn btn-primary btn-block"
+                            >
+                                + Create Quiz
+                            </button>
+
+                        </form>
+
+                        <p
+                                id="quizMessage"
+                                class="message"
+                                aria-live="polite"
+                        ></p>
+
+                    </div>
+
+                    <div class="card">
+
+                        <h3>✨ Generate AI Quiz
+
+                            <span class="badge badge-ai" style="vertical-align:middle;">Powered by AI</span>
+
+                        </h3>
+
+                        <p class="card-sub">Let AI create a quiz for you based on the topic.</p>
+
+                        <form id="aiQuizForm">
+
+                            <div>
+
+                                <label for="aiTopic">Topic</label>
+
+                                <input
+                                        id="aiTopic"
+                                        class="input"
+                                        type="text"
+                                        placeholder="e.g. Java OOP, Database Normalization"
+                                        required
+                                >
+
+                            </div>
+
+                            <div>
+
+                                <label for="aiQuestionCount">Number of Questions</label>
+
+                                <div class="stepper">
+
+                                    <button
+                                            type="button"
+                                            data-step="-1"
+                                            aria-label="Decrease"
+                                    >
+                                        −
+                                    </button>
+
+                                    <input
+                                            id="aiQuestionCount"
+                                            type="number"
+                                            min="1"
+                                            max="20"
+                                            value="5"
+                                            required
+                                    >
+
+                                    <button
+                                            type="button"
+                                            data-step="1"
+                                            aria-label="Increase"
+                                    >
+                                        +
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <div>
+
+                                <label for="aiDifficulty">Difficulty Level</label>
+
+                                <select
+                                        id="aiDifficulty"
+                                        class="input"
+                                        required
+                                >
+
+                                    <option value="easy">
+                                        Easy
+                                    </option>
+
+                                    <option
+                                            value="medium"
+                                            selected
+                                    >
+                                        Medium
+                                    </option>
+
+                                    <option value="hard">
+                                        Hard
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <button
+                                    type="submit"
+                                    class="btn btn-ai btn-block"
+                            >
+                                ✨ Generate Quiz
+                            </button>
+
+                        </form>
+
+                        <p
+                                id="aiQuizMessage"
+                                class="message"
+                                aria-live="polite"
+                        ></p>
+
+                    </div>
+
+                </div>
+
+                <div
+                        style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;"
+                >
+
+                    <div>
+
+                        <h3 style="font-size:17px;">Available Quizzes</h3>
+
+                        <p class="card-sub" style="margin-bottom:0;">Browse and take quizzes created by you or AI.</p>
+
+                    </div>
+
+                    <div
+                            class="filter-chips"
+                            role="group"
+                            aria-label="Filter quizzes"
+                    >
+
+                        <button
+                                type="button"
+                                class="chip active"
+                                data-filter="all"
+                        >
+                            All
+                        </button>
+
+                        <button
+                                type="button"
+                                class="chip"
+                                data-filter="manual"
+                        >
+                            Manual
+                        </button>
+
+                        <button
+                                type="button"
+                                class="chip"
+                                data-filter="ai"
+                        >
+                            AI Generated
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div
+                        id="quizzesList"
+                        class="quiz-rows"
+                >
+                    <div class="empty-state">Loading quizzes...</div>
+                </div>
+
+            </section>
+
+
+            <!-- ============ QUIZ TAKING ============ -->
+
+            <section
+                    id="view-quiz"
+                    class="view hidden"
+            >
+
+                <div class="quiz-topbar-card">
+
+                    <button
+                            id="backToQuizzes"
+                            type="button"
+                            class="btn btn-outline"
+                    >
+                        ← Back to Quizzes
+                    </button>
+
+                    <div>
+
+                        <h1 id="quizTakeTitle">
+                            Quiz
+                        </h1>
+
+                        <div
+                                id="quizTakeSub"
+                                class="q-sub"
+                        ></div>
+
+                    </div>
+
+                    <div class="quiz-top-chip">
+
+                        <span class="qc-icon">?</span>
+
+                        <div>
+
+                            <div class="qc-label">Question</div>
+
+                            <div
+                                    id="quizProgressText"
+                                    class="qc-value"
+                            >
+                                1 / 1
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="quiz-progress">
+
+                        <div class="progress-track">
+
+                            <div
+                                    id="quizProgressBar"
+                                    class="progress-fill"
+                                    style="width:0%;"
+                            ></div>
+
+                        </div>
+
+                        <span
+                                id="quizProgressLabel"
+                                class="progress-label"
+                        >
+                            0%
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="quiz-taking-grid">
+
+                    <div class="card question-card">
+
+                        <div class="q-badge-row">
+
+                            <span class="badge badge-ai">Multiple Choice</span>
+
+                        </div>
+
+                        <h2 id="questionText">
+                            Loading…
+                        </h2>
+
+                        <div
+                                id="optionsList"
+                                class="options-list"
+                        ></div>
+
+                        <div class="question-actions">
+
+                            <button
+                                    id="resetAnswerBtn"
+                                    type="button"
+                                    class="btn btn-outline"
+                            >
+                                ⟲ Reset
+                            </button>
+
+                            <span class="spacer"></span>
+
+                            <button
+                                    id="prevQuestionBtn"
+                                    type="button"
+                                    class="btn btn-outline"
+                            >
+                                ← Previous
+                            </button>
+
+                            <button
+                                    id="nextQuestionBtn"
+                                    type="button"
+                                    class="btn btn-primary"
+                            >
+                                Next Question →
+                            </button>
+
+                        </div>
+
+                        <p
+                                id="quizResultMessage"
+                                class="message"
+                                aria-live="polite"
+                        ></p>
+
+                    </div>
+
+                    <aside class="card palette-card">
+
+                        <h3>🧩 Question Palette</h3>
+
+                        <p class="card-sub">Jump to any question.</p>
+
+                        <div class="palette-legend">
+
+                            <span><span class="dot current"></span>Current</span>
+
+                            <span><span class="dot answered"></span>Answered</span>
+
+                            <span><span class="dot none"></span>Not Answered</span>
+
+                        </div>
+
+                        <div
+                                id="paletteButtons"
+                                class="palette-grid"
+                        ></div>
+
+                        <button
+                                id="submitQuizButton"
+                                type="button"
+                                class="btn btn-ghost btn-block"
+                        >
+                            🚩 Submit Quiz
+                        </button>
+
+                    </aside>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============ RESULTS ============ -->
+
+            <section
+                    id="view-results"
+                    class="view hidden"
+            >
+
+                <div
+                        id="resultsBanner"
+                        class="results-banner"
+                >
+
+                    <span
+                            class="trophy"
+                            aria-hidden="true"
+                    >🏆</span>
+
+                    <div>
+
+                        <h1>Quiz Completed!</h1>
+
+                        <p>Great job! You have successfully completed the quiz.</p>
+
+                    </div>
+
+                    <button
+                            id="takeAnotherQuiz"
+                            type="button"
+                            class="btn btn-primary"
+                    >
+                        🔄 Take Another Quiz
+                    </button>
+
+                </div>
+
+                <div class="results-head card">
+
+                    <div class="score-ring-wrap">
+
+                        <div class="score-ring">
+
+                            <svg viewBox="0 0 170 170" aria-hidden="true">
+
+                                <circle
+                                        class="ring-track"
+                                        cx="85" cy="85" r="70"
+                                        fill="none"
+                                        stroke-width="14"
+                                />
+
+                                <circle
+                                        id="scoreRingFg"
+                                        class="ring-fg"
+                                        cx="85" cy="85" r="70"
+                                        fill="none"
+                                        stroke-width="14"
+                                        stroke-linecap="round"
+                                        stroke-dasharray="439.8"
+                                        stroke-dashoffset="439.8"
+                                />
+
+                            </svg>
+
+                            <div class="ring-center">
+
+                                <strong id="scorePercent">
+                                    —
+                                </strong>
+
+                                <span>Your Score</span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <h2 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+
+                            <span id="resultQuizTitle">
+                                —
+                            </span>
+
+                            <span
+                                    id="resultQuizBadge"
+                                    class="badge badge-neutral"
+                            >
+                                —
+                            </span>
+
+                        </h2>
+
+                        <p
+                                id="resultQuizDesc"
+                                style="color:var(--text-muted);font-size:13.5px;margin:4px 0 2px;"
+                        ></p>
+
+                        <p
+                                id="resultCompletedOn"
+                                style="color:var(--text-muted);font-size:12.5px;"
+                        ></p>
+
+                        <div class="result-chips">
+
+                            <div class="result-chip">
+
+                                <span class="rc-icon">✅</span>
+
+                                <strong id="resultCorrect">
+                                    0
+                                </strong>
+
+                                <span>Correct</span>
+
+                            </div>
+
+                            <div class="result-chip">
+
+                                <span class="rc-icon">❌</span>
+
+                                <strong id="resultIncorrect">
+                                    0
+                                </strong>
+
+                                <span>Incorrect</span>
+
+                            </div>
+
+                            <div class="result-chip">
+
+                                <span class="rc-icon">⭐</span>
+
+                                <strong id="resultTotal">
+                                    0
+                                </strong>
+
+                                <span>Total Questions</span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div
+                        style="display:grid;grid-template-columns:1fr 1.3fr;gap:18px;align-items:start;"
+                        class="results-cols"
+                >
+
+                    <div class="card">
+
+                        <h3>📊 Score Trend</h3>
+
+                        <p class="card-sub">Your recent quiz attempt scores.</p>
+
+                        <div
+                                id="scoreTrendList"
+                                class="trend-list"
+                        >
+                            <div class="empty-state">No attempts yet.</div>
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <h3>📋 Attempt History</h3>
+
+                        <p class="card-sub">All your quiz attempts.</p>
+
+                        <div
+                                id="quizAttemptsList"
+                                class="table-wrap"
+                        >
+                            <div class="empty-state">No attempts yet.</div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============ PROFILE ============ -->
+
+            <section
+                    id="view-profile"
+                    class="view hidden"
+            >
+
+                <div class="wave-banner" style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+
+                    <span class="page-icon" style="background:var(--primary);color:#fff;">👤</span>
+
+                    <div>
+
+                        <h1 style="font-size:26px;">My Profile</h1>
+
+                        <p style="color:var(--text-muted);font-size:13.5px;">View and manage your profile information.</p>
+
+                    </div>
+
+                </div>
+
+                <div class="profile-grid">
+
+                    <div class="card profile-info">
+
+                        <h3
+                                style="align-self:flex-start;"
+                        >
+                            👤 Profile Information
+                        </h3>
+
+                        <div
+                                id="profileAvatar"
+                                class="profile-avatar"
+                                aria-hidden="true"
+                        >
+                            H
+                        </div>
+
+                        <h2 id="profileName">
+                            …
+                        </h2>
+
+                        <div
+                                id="profileEmail"
+                                class="pf-email"
+                        >
+                            …
+                        </div>
+
+                        <button
+                                id="editProfileBtn"
+                                type="button"
+                                class="btn btn-outline"
+                                disabled
+                                title="Coming soon - profile updates are not supported by the API yet"
+                        >
+                            ✏️ Edit Profile
+                        </button>
+
+                        <div class="pf-rows">
+
+                            <div class="pf-row">
+
+                                <span class="pf-icon">🛡️</span>
+
+                                <span class="pf-label">Account Status</span>
+
+                                <span class="pf-value">
+
+                                    <span class="status-dot"></span>
+
+                                    Active
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <button
+                                id="profileStartStudying"
+                                type="button"
+                                class="btn btn-primary btn-block"
+                                style="margin-top:18px;"
+                        >
+                            ▶ Start Studying
+                        </button>
+
+                    </div>
+
+                    <div>
+
+                        <div class="card">
+
+                            <h3>📊 Study Statistics</h3>
+
+                            <p class="card-sub">Your progress at a glance.</p>
+
+                            <div class="profile-stats">
+
+                                <div class="pf-stat">
+
+                                    <span class="ps-icon">🕐</span>
+
+                                    <strong id="pfStudyTime">
+                                        —
+                                    </strong>
+
+                                    <span>Total Study Time</span>
+
+                                </div>
+
+                                <div class="pf-stat">
+
+                                    <span class="ps-icon">📚</span>
+
+                                    <strong id="pfSessions">
+                                        0
+                                    </strong>
+
+                                    <span>Study Sessions</span>
+
+                                </div>
+
+                                <div class="pf-stat">
+
+                                    <span class="ps-icon">🏆</span>
+
+                                    <strong id="pfAvgScore">
+                                        —
+                                    </strong>
+
+                                    <span>Average Score</span>
+
+                                </div>
+
+                                <div class="pf-stat">
+
+                                    <span class="ps-icon">✅</span>
+
+                                    <strong id="pfQuizzesCompleted">
+                                        0
+                                    </strong>
+
+                                    <span>Quizzes Completed</span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                                class="card"
+                                style="margin-top:18px;"
+                        >
+
+                            <div
+                                    style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"
+                            >
+
+                                <h3 style="margin-bottom:0;">⚡ Recent Activity</h3>
+
+                                <button
+                                        id="profileActivityAll"
+                                        type="button"
+                                        class="link-button"
+                                        style="font-size:12.5px;"
+                                >
+                                    View All →
+                                </button>
+
+                            </div>
+
+                            <div
+                                    id="profileActivityList"
+                                    class="activity-list"
+                            >
+                                <div class="empty-state">Loading activity...</div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ============ SETTINGS ============ -->
+
+            <section
+                    id="view-settings"
+                    class="view hidden"
+            >
+
+                <div class="wave-banner" style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+
+                    <span class="page-icon" style="background:var(--primary);color:#fff;">⚙️</span>
+
+                    <div>
+
+                        <h1 style="font-size:26px;">Settings</h1>
+
+                        <p style="color:var(--text-muted);font-size:13.5px;">Manage your account and appearance.</p>
+
+                    </div>
+
+                </div>
+
+                <div class="settings-grid">
+
+                    <div>
+
+                        <div class="card">
+
+                            <h3>👤 Account Settings</h3>
+
+                            <p class="card-sub">Your account details.</p>
+
+                            <div style="display:grid;gap:13px;">
+
+                                <div>
+
+                                    <label for="settingsName">Name</label>
+
+                                    <input
+                                            id="settingsName"
+                                            class="input"
+                                            type="text"
+                                            disabled
+                                    >
+
+                                </div>
+
+                                <div>
+
+                                    <label for="settingsEmail">Email</label>
+
+                                    <input
+                                            id="settingsEmail"
+                                            class="input"
+                                            type="email"
+                                            disabled
+                                    >
+
+                                    <span class="badge badge-soon" style="margin-top:8px;">Profile updates - coming soon</span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                                class="card"
+                                style="margin-top:18px;"
+                        >
+
+                            <h3>🔒 Change Password</h3>
+
+                            <p class="card-sub">
+                                Password changes are not supported by the API yet.
+                                <span class="badge badge-soon">Coming soon</span>
+                            </p>
+
+                            <div style="display:grid;gap:13px;">
+
+                                <div>
+
+                                    <label for="settingsCurrentPassword">Current Password</label>
+
+                                    <input
+                                            id="settingsCurrentPassword"
+                                            class="input"
+                                            type="password"
+                                            placeholder="••••••••"
+                                            disabled
+                                    >
+
+                                </div>
+
+                                <div>
+
+                                    <label for="settingsNewPassword">New Password</label>
+
+                                    <input
+                                            id="settingsNewPassword"
+                                            class="input"
+                                            type="password"
+                                            placeholder="••••••••"
+                                            disabled
+                                    >
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <div class="card">
+
+                            <h3>🔔 Notifications</h3>
+
+                            <p class="card-sub">
+                                Notification delivery is not supported by the API yet.
+                                <span class="badge badge-soon">Coming soon</span>
+                            </p>
+
+                            <div class="settings-row">
+
+                                <div class="sr-label">
+
+                                    <strong>Quiz reminders</strong>
+
+                                    <span>Get reminded to take a quiz</span>
+
+                                </div>
+
+                                <label class="toggle">
+
+                                    <input
+                                            type="checkbox"
+                                            disabled
+                                    >
+
+                                    <span class="track"></span>
+
+                                </label>
+
+                            </div>
+
+                            <div class="settings-row">
+
+                                <div class="sr-label">
+
+                                    <strong>Study streaks</strong>
+
+                                    <span>Encouragement when you hit a streak</span>
+
+                                </div>
+
+                                <label class="toggle">
+
+                                    <input
+                                            type="checkbox"
+                                            disabled
+                                    >
+
+                                    <span class="track"></span>
+
+                                </label>
+
+                            </div>
+
+                            <div class="settings-row">
+
+                                <div class="sr-label">
+
+                                    <strong>Score summaries</strong>
+
+                                    <span>A summary after each quiz</span>
+
+                                </div>
+
+                                <label class="toggle">
+
+                                    <input
+                                            type="checkbox"
+                                            disabled
+                                    >
+
+                                    <span class="track"></span>
+
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                                class="card"
+                                style="margin-top:18px;"
+                        >
+
+                            <h3>🎨 Appearance</h3>
+
+                            <p class="card-sub">Pick how the platform looks. This actually works.</p>
+
+                            <div
+                                    id="themeOptions"
+                                    class="theme-options"
+                                    role="radiogroup"
+                                    aria-label="Theme"
+                            >
+
+                                <button
+                                        type="button"
+                                        class="theme-option"
+                                        data-theme-choice="light"
+                                >
+
+                                    <div class="to-preview light"></div>
+
+                                    Light
+
+                                </button>
+
+                                <button
+                                        type="button"
+                                        class="theme-option"
+                                        data-theme-choice="dark"
+                                >
+
+                                    <div class="to-preview dark"></div>
+
+                                    Dark
+
+                                </button>
+
+                                <button
+                                        type="button"
+                                        class="theme-option"
+                                        data-theme-choice="system"
+                                >
+
+                                    <div class="to-preview system"></div>
+
+                                    System
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="settings-save">
+
+                            <button
+                                    id="saveSettingsBtn"
+                                    type="button"
+                                    class="btn btn-primary"
+                            >
+                                Save All Changes
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
 
     </div>
 
-</footer>
-
-
-<div
-        id="toastContainer"
-        class="toast-container"
-        aria-live="polite"
-></div>
+</div>
 
 
 <script src="js/app.js"></script>
