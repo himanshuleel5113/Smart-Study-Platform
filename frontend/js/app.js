@@ -1,155 +1,39 @@
-// When served by Nginx (port 80 locally, NodePort 30000 on Kubernetes), use
-// same-origin paths - Nginx proxies /api/ to the API Gateway. Otherwise
-// (e.g. "npx serve" without a proxy) talk to the API Gateway directly.
+/* ============================================================
+   Smart Study Platform — frontend logic
+   Plain JavaScript. Hash-routed views inside a sidebar shell.
+   All API endpoints, request bodies and JWT handling unchanged.
+   ============================================================ */
+
+// When served by Nginx (port 80 locally, NodePort 30000 on Kubernetes),
+// use same-origin paths - Nginx proxies /api/ to the API Gateway.
+// Otherwise (e.g. "npx serve" without a proxy) talk to the Gateway directly.
 const API_BASE_URL = (window.location.port === "80"
         || window.location.port === "30000"
         || (window.location.port === "" && window.location.protocol !== "file:"))
     ? ""
     : "http://localhost:8080";
 
-const loginSection = document.getElementById("loginSection");
-const registerSection = document.getElementById("registerSection");
-const dashboard = document.getElementById("dashboard");
-const subjectsSection = document.getElementById("subjects");
-const studySection = document.getElementById("study");
-const quizzesSection = document.getElementById("quizzes");
 
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const logoutButton = document.getElementById("logoutButton");
+/* ============================================================
+   Tiny helpers
+   ============================================================ */
 
-const showRegisterButton =
-    document.getElementById("showRegisterButton");
+const $ = (id) => document.getElementById(id);
 
-const showLoginButton =
-    document.getElementById("showLoginButton");
+function escapeHtml(value) {
 
-const loginMessage =
-    document.getElementById("loginMessage");
-
-const registerMessage =
-    document.getElementById("registerMessage");
-
-const welcomeMessage =
-    document.getElementById("welcomeMessage");
-
-const totalStudyTime =
-    document.getElementById("totalStudyTime");
-
-const totalSessions =
-    document.getElementById("totalSessions");
-
-const averageSession =
-    document.getElementById("averageSession");
-
-const subjectsList =
-    document.getElementById("subjectsList");
-
-const subjectForm =
-    document.getElementById("subjectForm");
-
-const subjectMessage =
-    document.getElementById("subjectMessage");
-
-const studyStartForm =
-    document.getElementById("studyStartForm");
-
-const studySubjectId =
-    document.getElementById("studySubjectId");
-
-const stopStudyButton =
-    document.getElementById("stopStudyButton");
-
-const studyMessage =
-    document.getElementById("studyMessage");
-
-const studyHistoryList =
-    document.getElementById("studyHistoryList");
-
-const quizForm =
-    document.getElementById("quizForm");
-
-const quizMessage =
-    document.getElementById("quizMessage");
-
-const aiQuizForm =
-    document.getElementById("aiQuizForm");
-
-const aiQuizMessage =
-    document.getElementById("aiQuizMessage");
-
-const quizzesList =
-    document.getElementById("quizzesList");
-
-const quizDetails =
-    document.getElementById("quizDetails");
-
-const quizDetailsTitle =
-    document.getElementById("quizDetailsTitle");
-
-const quizDetailsDescription =
-    document.getElementById("quizDetailsDescription");
-
-const quizQuestionsList =
-    document.getElementById("quizQuestionsList");
-
-const submitQuizButton =
-    document.getElementById("submitQuizButton");
-
-const quizResultMessage =
-    document.getElementById("quizResultMessage");
-
-const quizAttemptsList =
-    document.getElementById("quizAttemptsList");
-
-
-let selectedQuiz = null;
-
-
-/* =========================================
-   Theme (light / dark)
-   ========================================= */
-
-(function initTheme() {
-
-    const savedTheme =
-        localStorage.getItem("theme");
-
-    if (savedTheme === "light" || savedTheme === "dark") {
-
-        document.documentElement.dataset.theme = savedTheme;
-    }
-
-    const themeToggle = document.getElementById("themeToggle");
-
-    if (themeToggle) {
-
-        themeToggle.addEventListener("click", () => {
-
-            const isDark =
-                document.documentElement.dataset.theme === "dark"
-                || (!document.documentElement.dataset.theme
-                    && window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-            const nextTheme =
-                isDark ? "light" : "dark";
-
-            document.documentElement.dataset.theme = nextTheme;
-
-            localStorage.setItem("theme", nextTheme);
-        });
-    }
-})();
-
-
-/* =========================================
-   Toast notifications
-   ========================================= */
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
 
 function showToast(message, type = "info") {
 
     const container =
-        document.getElementById("toastContainer");
+        $("toastContainer");
 
     if (!container) {
         return;
@@ -175,11 +59,6 @@ function showToast(message, type = "info") {
     }, 4200);
 }
 
-
-/* =========================================
-   Button loading state
-   ========================================= */
-
 function setButtonLoading(button, isLoading) {
 
     if (!button) {
@@ -190,19 +69,6 @@ function setButtonLoading(button, isLoading) {
 
     button.disabled = isLoading;
 }
-
-
-function getFormButton(form) {
-
-    return form
-        ? form.querySelector('button[type="submit"]')
-        : null;
-}
-
-
-/* =========================================
-   Friendly error messages
-   ========================================= */
 
 function friendlyHttpMessage(status) {
 
@@ -234,984 +100,126 @@ function friendlyHttpMessage(status) {
     }
 }
 
+function formatDuration(seconds) {
 
-/* =========================================
-   Application startup
-   ========================================= */
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    const token = localStorage.getItem("token");
-
-    if (token) {
-        showAuthenticatedPage();
-        loadDashboard();
-    } else {
-        showLoginPage();
+    if (!seconds || seconds <= 0) {
+        return "0 min";
     }
-});
 
+    const totalSeconds =
+        Math.round(seconds);
 
-/* =========================================
-   Login
-   ========================================= */
+    const hours =
+        Math.floor(totalSeconds / 3600);
 
-loginForm.addEventListener("submit", async (event) => {
+    const minutes =
+        Math.floor((totalSeconds % 3600) / 60);
 
-    event.preventDefault();
+    const remainingSeconds =
+        totalSeconds % 60;
 
-    const email =
-        document.getElementById("loginEmail")
-            .value
-            .trim();
-
-    const password =
-        document.getElementById("loginPassword")
-            .value;
-
-    loginMessage.textContent = "Logging in...";
-
-    try {
-
-        const data = await apiRequest(
-            "/api/users/login",
-            {
-                method: "POST",
-                body: {
-                    email: email,
-                    password: password
-                },
-                includeAuth: false
-            }
-        );
-
-        localStorage.setItem("token", data.token);
-
-        loginForm.reset();
-        loginMessage.textContent = "";
-
-        showAuthenticatedPage();
-
-        showToast("Welcome back!", "success");
-
-        await loadDashboard();
-
-    } catch (error) {
-
-        loginMessage.textContent =
-            error.message;
-
-        showToast(error.message, "error");
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
     }
-});
 
-
-/* =========================================
-   Registration
-   ========================================= */
-
-registerForm.addEventListener(
-    "submit",
-    async (event) => {
-
-        event.preventDefault();
-
-        const name =
-            document.getElementById("registerName")
-                .value
-                .trim();
-
-        const email =
-            document.getElementById("registerEmail")
-                .value
-                .trim();
-
-        const password =
-            document.getElementById("registerPassword")
-                .value;
-
-        registerMessage.textContent =
-            "Creating account...";
-
-        try {
-
-            await apiRequest(
-                "/api/users/register",
-                {
-                    method: "POST",
-                    body: {
-                        name: name,
-                        email: email,
-                        password: password
-                    },
-                    includeAuth: false
-                }
-            );
-
-            registerForm.reset();
-
-            registerMessage.textContent =
-                "Registration successful. You can now log in.";
-
-            showToast("Account created - you can now log in.", "success");
-
-        } catch (error) {
-
-            registerMessage.textContent =
-                error.message;
-
-            showToast(error.message, "error");
-        }
+    if (minutes > 0) {
+        return `${minutes} min`;
     }
-);
 
-
-/* =========================================
-   Authentication screen switching
-   ========================================= */
-
-showRegisterButton.addEventListener(
-    "click",
-    () => {
-
-        loginSection.classList.add("hidden");
-        registerSection.classList.remove("hidden");
-
-        loginMessage.textContent = "";
-        registerMessage.textContent = "";
-    }
-);
-
-
-showLoginButton.addEventListener(
-    "click",
-    () => {
-
-        registerSection.classList.add("hidden");
-        loginSection.classList.remove("hidden");
-
-        loginMessage.textContent = "";
-        registerMessage.textContent = "";
-    }
-);
-
-
-/* =========================================
-   Logout
-   ========================================= */
-
-logoutButton.addEventListener("click", () => {
-
-    localStorage.removeItem("token");
-
-    selectedQuiz = null;
-
-    quizDetails.classList.add("hidden");
-
-    showLoginPage();
-});
-
-
-/* =========================================
-   Dashboard
-   ========================================= */
-
-async function loadDashboard() {
-
-    try {
-
-        const profile =
-            await apiRequest(
-                "/api/users/profile"
-            );
-
-        welcomeMessage.textContent =
-            `Welcome, ${profile.name}! 👋`;
-
-        await Promise.all([
-            loadStudyStats(),
-            loadSubjects(),
-            loadStudyHistory(),
-            loadQuizzes(),
-            loadAllQuizAttempts()
-        ]);
-
-    } catch (error) {
-
-        console.error(
-            "Dashboard loading failed:",
-            error
-        );
-
-        if (error.status === 401) {
-
-            localStorage.removeItem("token");
-            showLoginPage();
-        }
-    }
+    return `${remainingSeconds} sec`;
 }
 
+function formatTimer(totalSeconds) {
 
-/* =========================================
-   Study statistics
-   ========================================= */
+    const s =
+        Math.max(0, Math.floor(totalSeconds));
 
-async function loadStudyStats() {
+    const hours =
+        Math.floor(s / 3600);
 
-    const stats =
-        await apiRequest(
-            "/api/study-stats"
-        );
+    const minutes =
+        Math.floor((s % 3600) / 60);
 
-    totalStudyTime.textContent =
-        formatDuration(
-            stats.totalStudySeconds
-        );
+    const seconds =
+        s % 60;
 
-    totalSessions.textContent =
-        stats.totalSessions;
+    const mm =
+        String(minutes).padStart(2, "0");
 
-    averageSession.textContent =
-        formatDuration(
-            stats.averageSessionSeconds
-        );
+    const ss =
+        String(seconds).padStart(2, "0");
+
+    return hours > 0
+        ? `${hours}:${mm}:${ss}`
+        : `${mm}:${ss}`;
 }
 
+function timeAgo(isoString) {
 
-/* =========================================
-   Subjects
-   ========================================= */
-
-async function loadSubjects() {
-
-    const subjects =
-        await apiRequest(
-            "/api/subjects"
-        );
-
-    subjectsList.innerHTML = "";
-
-    studySubjectId.innerHTML = `
-        <option value="">
-            Select a subject
-        </option>
-    `;
-
-    if (subjects.length === 0) {
-
-        subjectsList.innerHTML =
-            '<div class="empty-state">No subjects yet - add your first subject above.</div>';
-
-        return;
+    if (!isoString) {
+        return "";
     }
 
-    subjects.forEach((subject) => {
+    const then =
+        new Date(isoString).getTime();
 
-        const item =
-            document.createElement("div");
+    const diffMs =
+        Date.now() - then;
 
-        item.className = "list-item";
+    const minutes =
+        Math.floor(diffMs / 60000);
 
-        const title =
-            document.createElement("h3");
+    if (minutes < 1) {
+        return "just now";
+    }
 
-        title.textContent =
-            subject.name;
+    if (minutes < 60) {
+        return `${minutes}m ago`;
+    }
 
-        const description =
-            document.createElement("p");
+    const hours =
+        Math.floor(minutes / 60);
 
-        description.textContent =
-            subject.description ||
-            "No description";
+    if (hours < 24) {
+        return `${hours}h ago`;
+    }
 
-        item.appendChild(title);
-        item.appendChild(description);
+    const days =
+        Math.floor(hours / 24);
 
-        subjectsList.appendChild(item);
+    return `${days}d ago`;
+}
 
+function formatDateTime(isoString) {
 
-        const option =
-            document.createElement("option");
+    if (!isoString) {
+        return "";
+    }
 
-        option.value = subject.id;
-        option.textContent = subject.name;
+    const d =
+        new Date(isoString);
 
-        studySubjectId.appendChild(option);
+    if (Number.isNaN(d.getTime())) {
+        return "";
+    }
+
+    return d.toLocaleString(undefined, {
+
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+
+        hour: "2-digit",
+        minute: "2-digit"
     });
 }
 
 
-/* =========================================
-   Create subject
-   ========================================= */
-
-subjectForm.addEventListener(
-    "submit",
-    async (event) => {
-
-        event.preventDefault();
-
-        const name =
-            document.getElementById("subjectName")
-                .value
-                .trim();
-
-        const description =
-            document.getElementById("subjectDescription")
-                .value
-                .trim();
-
-        subjectMessage.textContent =
-            "Creating subject...";
-
-        try {
-
-            await apiRequest(
-                "/api/subjects",
-                {
-                    method: "POST",
-                    body: {
-                        name: name,
-                        description: description
-                    }
-                }
-            );
-
-            subjectForm.reset();
-
-            subjectMessage.textContent =
-                "Subject created successfully.";
-
-            showToast("Subject created.", "success");
-
-            await loadSubjects();
-
-        } catch (error) {
-
-            subjectMessage.textContent =
-                error.message;
-
-            showToast(error.message, "error");
-        }
-    }
-);
-
-
-/* =========================================
-   Study session
-   ========================================= */
-
-studyStartForm.addEventListener(
-    "submit",
-    async (event) => {
-
-        event.preventDefault();
-
-        const subjectId =
-            Number(
-                studySubjectId.value
-            );
-
-        if (!subjectId) {
-
-            studyMessage.textContent =
-                "Please select a subject.";
-
-            return;
-        }
-
-        studyMessage.textContent =
-            "Starting study session...";
-
-        try {
-
-            await apiRequest(
-                "/api/study-sessions/start",
-                {
-                    method: "POST",
-                    body: {
-                        subjectId: subjectId
-                    }
-                }
-            );
-
-            studyMessage.textContent =
-                "Study session started. 📚";
-
-            showToast("Study session started.", "success");
-
-            await loadStudyStats();
-            await loadStudyHistory();
-
-        } catch (error) {
-
-            studyMessage.textContent =
-                error.message;
-
-            showToast(error.message, "error");
-        }
-    }
-);
-
-
-stopStudyButton.addEventListener(
-    "click",
-    async () => {
-
-        studyMessage.textContent =
-            "Stopping study session...";
-
-        try {
-
-            const result =
-                await apiRequest(
-                    "/api/study-sessions/stop",
-                    {
-                        method: "POST"
-                    }
-                );
-
-            studyMessage.textContent =
-                `Session completed: ${formatDuration(
-                    result.durationSeconds
-                )}`;
-
-            showToast(
-                `Session completed: ${formatDuration(result.durationSeconds)}`,
-                "success"
-            );
-
-            await loadStudyStats();
-            await loadStudyHistory();
-
-        } catch (error) {
-
-            studyMessage.textContent =
-                error.message;
-
-            showToast(error.message, "error");
-        }
-    }
-);
-
-
-/* =========================================
-   Study history
-   ========================================= */
-
-async function loadStudyHistory() {
-
-    const history =
-        await apiRequest(
-            "/api/study-sessions/history"
-        );
-
-    studyHistoryList.innerHTML = "";
-
-    if (history.length === 0) {
-
-        studyHistoryList.innerHTML =
-            '<div class="empty-state">No study sessions yet - start one to begin tracking.</div>';
-
-        return;
-    }
-
-    history.forEach((session) => {
-
-        const item =
-            document.createElement("div");
-
-        item.className = "list-item";
-
-        const title =
-            document.createElement("h3");
-
-        title.textContent =
-            `Subject ID: ${session.subjectId}`;
-
-        const details =
-            document.createElement("p");
-
-        details.textContent =
-            `Duration: ${formatDuration(
-                session.durationSeconds
-            )}`;
-
-        item.appendChild(title);
-        item.appendChild(details);
-
-        studyHistoryList.appendChild(item);
-    });
-}
-
-
-/* =========================================
-   Manual quiz creation
-   ========================================= */
-
-quizForm.addEventListener(
-    "submit",
-    async (event) => {
-
-        event.preventDefault();
-
-        const title =
-            document.getElementById("quizTitle")
-                .value
-                .trim();
-
-        const description =
-            document.getElementById("quizDescription")
-                .value
-                .trim();
-
-        quizMessage.textContent =
-            "Creating quiz...";
-
-        try {
-
-            await apiRequest(
-                "/api/quizzes",
-                {
-                    method: "POST",
-                    body: {
-                        title: title,
-                        description: description
-                    }
-                }
-            );
-
-            quizForm.reset();
-
-            quizMessage.textContent =
-                "Quiz created successfully.";
-
-            showToast("Quiz created.", "success");
-
-            await loadQuizzes();
-
-        } catch (error) {
-
-            quizMessage.textContent =
-                error.message;
-
-            showToast(error.message, "error");
-        }
-    }
-);
-
-
-/* =========================================
-   AI quiz generation
-   ========================================= */
-
-aiQuizForm.addEventListener(
-    "submit",
-    async (event) => {
-
-        event.preventDefault();
-
-        const topic =
-            document.getElementById("aiTopic")
-                .value
-                .trim();
-
-        const numberOfQuestions =
-            Number(
-                document.getElementById(
-                    "aiQuestionCount"
-                ).value
-            );
-
-        const difficulty =
-            document.getElementById(
-                "aiDifficulty"
-            ).value;
-
-        aiQuizMessage.textContent =
-            "Generating AI quiz... 🤖";
-
-        try {
-
-            const quiz =
-                await apiRequest(
-                    "/api/ai-quizzes/generate",
-                    {
-                        method: "POST",
-                        body: {
-                            topic: topic,
-                            numberOfQuestions:
-                                numberOfQuestions,
-                            difficulty: difficulty
-                        }
-                    }
-                );
-
-            aiQuizForm.reset();
-
-            document.getElementById(
-                "aiQuestionCount"
-            ).value = 5;
-
-            document.getElementById(
-                "aiDifficulty"
-            ).value = "medium";
-
-            aiQuizMessage.textContent =
-                `AI quiz "${quiz.title}" created successfully.`;
-
-            showToast(`AI quiz "${quiz.title}" created.`, "success");
-
-            await loadQuizzes();
-
-            await openQuiz(
-                quiz.quizId
-            );
-
-        } catch (error) {
-
-            aiQuizMessage.textContent =
-                error.message;
-
-            showToast(error.message, "error");
-        }
-    }
-);
-
-
-/* =========================================
-   Quiz list
-   ========================================= */
-
-async function loadQuizzes() {
-
-    const quizzes =
-        await apiRequest(
-            "/api/quizzes"
-        );
-
-    quizzesList.innerHTML = "";
-
-    if (quizzes.length === 0) {
-
-        quizzesList.innerHTML =
-            '<div class="empty-state">No quizzes yet - create one manually or with AI.</div>';
-
-        return;
-    }
-
-    quizzes.forEach((quiz) => {
-
-        const item =
-            document.createElement("div");
-
-        item.className = "list-item";
-
-        const title =
-            document.createElement("h3");
-
-        title.textContent =
-            quiz.title;
-
-        const description =
-            document.createElement("p");
-
-        description.textContent =
-            quiz.description ||
-            "No description";
-
-        const badge =
-            document.createElement("span");
-
-        badge.className = "badge";
-
-        badge.textContent =
-            quiz.aiGenerated
-                ? "AI Generated"
-                : "Manual Quiz";
-
-        const viewButton =
-            document.createElement("button");
-
-        viewButton.type = "button";
-        viewButton.textContent =
-            "Open Quiz";
-
-        viewButton.addEventListener(
-            "click",
-            () => openQuiz(quiz.id)
-        );
-
-        item.appendChild(title);
-        item.appendChild(description);
-        item.appendChild(badge);
-        item.appendChild(viewButton);
-
-        quizzesList.appendChild(item);
-    });
-}
-
-
-/* =========================================
-   Open quiz
-   ========================================= */
-
-async function openQuiz(quizId) {
-
-    quizResultMessage.textContent =
-        "";
-
-    const quiz =
-        await apiRequest(
-            `/api/quizzes/${quizId}`
-        );
-
-    const questions =
-        await apiRequest(
-            `/api/quizzes/${quizId}/questions`
-        );
-
-    selectedQuiz = {
-        quiz: quiz,
-        questions: questions
-    };
-
-    quizDetailsTitle.textContent =
-        quiz.title;
-
-    quizDetailsDescription.textContent =
-        quiz.description ||
-        "";
-
-    quizQuestionsList.innerHTML = "";
-
-    if (questions.length === 0) {
-
-        quizQuestionsList.innerHTML =
-            '<div class="empty-state">This quiz has no questions yet.</div>';
-
-        submitQuizButton.classList.add("hidden");
-        quizDetails.classList.remove("hidden");
-
-        return;
-    }
-
-    submitQuizButton.classList.remove("hidden");
-
-    questions.forEach(
-        (question, index) => {
-
-            const questionContainer =
-                document.createElement("div");
-
-            questionContainer.className =
-                "list-item";
-
-            const questionTitle =
-                document.createElement("h3");
-
-            questionTitle.textContent =
-                `${index + 1}. ${question.questionText}`;
-
-            questionContainer.appendChild(
-                questionTitle
-            );
-
-            const options = [
-                ["A", question.optionA],
-                ["B", question.optionB],
-                ["C", question.optionC],
-                ["D", question.optionD]
-            ];
-
-            options.forEach(
-                ([letter, text]) => {
-
-                    const label =
-                        document.createElement("label");
-
-                    const radio =
-                        document.createElement("input");
-
-                    radio.type = "radio";
-                    radio.name =
-                        `question-${question.id}`;
-                    radio.value = letter;
-
-                    label.appendChild(radio);
-
-                    label.appendChild(
-                        document.createTextNode(
-                            ` ${letter}. ${text}`
-                        )
-                    );
-
-                    questionContainer.appendChild(
-                        label
-                    );
-                }
-            );
-
-            quizQuestionsList.appendChild(
-                questionContainer
-            );
-        }
-    );
-
-    quizDetails.classList.remove("hidden");
-
-    quizDetails.scrollIntoView({
-        behavior: "smooth"
-    });
-}
-
-
-/* =========================================
-   Submit quiz
-   ========================================= */
-
-submitQuizButton.addEventListener(
-    "click",
-    async () => {
-
-        if (!selectedQuiz) {
-
-            quizResultMessage.textContent =
-                "Please select a quiz first.";
-
-            return;
-        }
-
-        const answers = [];
-
-        for (const question
-            of selectedQuiz.questions) {
-
-            const selectedOption =
-                document.querySelector(
-                    `input[name="question-${question.id}"]:checked`
-                );
-
-            if (!selectedOption) {
-
-                quizResultMessage.textContent =
-                    "Please answer every question.";
-
-                return;
-            }
-
-            answers.push({
-                questionId: question.id,
-                selectedAnswer:
-                    selectedOption.value
-            });
-        }
-
-        quizResultMessage.textContent =
-            "Submitting quiz...";
-
-        try {
-
-            const result =
-                await apiRequest(
-                    "/api/quiz-submissions",
-                    {
-                        method: "POST",
-                        body: {
-                            quizId:
-                                selectedQuiz.quiz.id,
-                            answers: answers
-                        }
-                    }
-                );
-
-            quizResultMessage.textContent =
-                `Result: ${result.score}/${result.totalQuestions} ` +
-                `(${result.percentage}%) 🎉`;
-
-            showToast(
-                `You scored ${result.score}/${result.totalQuestions} (${result.percentage}%)`,
-                "success"
-            );
-
-            await loadAllQuizAttempts();
-
-        } catch (error) {
-
-            quizResultMessage.textContent =
-                error.message;
-
-            showToast(error.message, "error");
-        }
-    }
-);
-
-
-/* =========================================
-   Quiz attempt history
-   ========================================= */
-
-async function loadAllQuizAttempts() {
-
-    const attempts =
-        await apiRequest(
-            "/api/quiz-attempts"
-        );
-
-    quizAttemptsList.innerHTML = "";
-
-    if (attempts.length === 0) {
-
-        quizAttemptsList.innerHTML =
-            '<div class="empty-state">No quiz attempts yet - open a quiz and test yourself.</div>';
-
-        return;
-    }
-
-    attempts.forEach((attempt) => {
-
-        const item =
-            document.createElement("div");
-
-        item.className = "list-item";
-
-        item.classList.add(
-            attempt.percentage >= 60
-                ? "attempt-good"
-                : "attempt-weak"
-        );
-
-        const title =
-            document.createElement("h3");
-
-        title.textContent =
-            `Quiz ${attempt.quizId}`;
-
-        const details =
-            document.createElement("p");
-
-        details.textContent =
-            `Score: ${attempt.score}/` +
-            `${attempt.totalQuestions} ` +
-            `(${attempt.percentage}%)`;
-
-        item.appendChild(title);
-        item.appendChild(details);
-
-        quizAttemptsList.appendChild(item);
-    });
-}
-
-
-/* =========================================
-   Generic API helper
-   ========================================= */
-
-async function apiRequest(
-    path,
-    options = {}
-) {
+/* ============================================================
+   Central API helper (unchanged behaviour)
+   ============================================================ */
+
+async function apiRequest(path, options = {}) {
 
     const {
         method = "GET",
@@ -1273,9 +281,7 @@ async function apiRequest(
     }
 
     const contentType =
-        response.headers.get(
-            "content-type"
-        );
+        response.headers.get("content-type");
 
     let data = null;
 
@@ -1316,79 +322,2694 @@ async function apiRequest(
 }
 
 
-/* =========================================
-   UI helpers
-   ========================================= */
+/* ============================================================
+   Shared state
+   ============================================================ */
+
+const state = {
+
+    profile: null,        // {id, name, email}
+    subjects: [],         // [{id, name, description}]
+    history: [],          // [{id, subjectId, startedAt, endedAt, durationSeconds}]
+    stats: null,          // {totalStudySeconds, totalSessions, averageSessionSeconds}
+    quizzes: [],          // [{id, title, description, aiGenerated, createdAt}]
+    questionCounts: {},   // quizId -> question count (or null when unknown)
+    attempts: [],         // [{attemptId, quizId, score, totalQuestions, percentage, completedAt}]
+    lastResult: null,     // result of the quiz just submitted
+    quizFilter: "all"
+};
+
+let quizSession = null;   // {quiz, questions, idx, answers{}}
+let sessionStart = null;  // ms timestamp of the running study session
+let timerInterval = null;
+
+
+/* ============================================================
+   Theme (light / dark / system)
+   ============================================================ */
+
+function applyTheme(pref) {
+
+    let resolved =
+        pref;
+
+    if (pref === "system") {
+
+        resolved = window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+    }
+
+    if (resolved === "dark") {
+
+        document.documentElement.dataset.theme = "dark";
+
+    } else {
+
+        document.documentElement.dataset.theme = "light";
+    }
+}
+
+function getThemePreference() {
+
+    return localStorage.getItem("theme") || "system";
+}
+
+function initTheme() {
+
+    applyTheme(getThemePreference());
+}
+
+
+/* ============================================================
+   Modal helper
+   ============================================================ */
+
+function showModal({ title, bodyHTML, okText = "Save", okClass = "btn-primary", onOk }) {
+
+    const root =
+        $("modalRoot");
+
+    if (!root) {
+        return { close: () => {} };
+    }
+
+    root.innerHTML = `
+        <div class="modal-backdrop" data-modal-cancel></div>
+        <div class="modal" role="dialog" aria-modal="true">
+            <h3>${escapeHtml(title)}</h3>
+            <div class="modal-body">${bodyHTML}</div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" data-modal-cancel>Cancel</button>
+                <button type="button" class="btn ${okClass}" data-modal-ok>${escapeHtml(okText)}</button>
+            </div>
+        </div>
+    `;
+
+    root.classList.remove("hidden");
+
+    const close =
+        () => {
+
+            root.classList.add("hidden");
+
+            root.innerHTML = "";
+        };
+
+    root.querySelectorAll("[data-modal-cancel]")
+        .forEach((el) => el.addEventListener("click", close));
+
+    const okButton =
+        root.querySelector("[data-modal-ok]");
+
+    okButton.addEventListener("click", async () => {
+
+        if (!onOk) {
+            close();
+            return;
+        }
+
+        setButtonLoading(okButton, true);
+
+        try {
+
+            await onOk();
+
+            close();
+
+        } catch (error) {
+
+            showToast(error.message, "error");
+
+        } finally {
+
+            setButtonLoading(okButton, false);
+        }
+    });
+
+    document.addEventListener("keydown", function onEsc(e) {
+
+        if (e.key === "Escape") {
+
+            close();
+
+            document.removeEventListener("keydown", onEsc);
+        }
+    });
+
+    return { close };
+}
+
+
+/* ============================================================
+   Router (hash based)
+   ============================================================ */
+
+const VIEW_IDS = [
+
+    "dashboard",
+    "subjects",
+    "study",
+    "quizzes",
+    "quiz",
+    "results",
+    "profile",
+    "settings"
+];
+
+let currentView =
+    "dashboard";
+
+function showView(name) {
+
+    if (!VIEW_IDS.includes(name)) {
+        name = "dashboard";
+    }
+
+    // Quiz view needs an active quiz session
+    if (name === "quiz" && !quizSession) {
+        name = "quizzes";
+    }
+
+    currentView =
+        name;
+
+    VIEW_IDS.forEach((view) => {
+
+        const section =
+            $(`view-${view}`);
+
+        if (section) {
+
+            section.classList.toggle(
+                "hidden",
+                view !== name
+            );
+        }
+    });
+
+    document.querySelectorAll(".sidebar-item")
+        .forEach((item) => {
+
+            item.classList.toggle(
+                "active",
+                item.dataset.view === name
+            );
+        });
+
+    // Per-view refreshers
+    if (name === "dashboard") refreshDashboard();
+    if (name === "subjects") renderSubjects();
+    if (name === "study") refreshStudy();
+    if (name === "quizzes") renderQuizzes();
+    if (name === "results") refreshResults();
+    if (name === "profile") refreshProfile();
+    if (name === "settings") renderSettings();
+
+    // Reset the client-side search when switching pages
+    const search =
+        $("globalSearch");
+
+    if (search) {
+        search.value = "";
+    }
+
+    // Close the mobile sidebar after navigating
+    closeSidebar();
+
+    window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+function routeFromHash() {
+
+    const hash =
+        (window.location.hash || "#dashboard")
+            .replace("#", "");
+
+    showView(hash);
+}
+
+
+/* ============================================================
+   Auth views
+   ============================================================ */
+
+function showAuthView(which) {
+
+    const authShell =
+        $("authShell");
+
+    const appShell =
+        $("appShell");
+
+    if (!authShell || !appShell) {
+        return;
+    }
+
+    authShell.classList.remove("hidden");
+
+    appShell.classList.add("hidden");
+
+    const isRegister =
+        which === "register";
+
+    $("loginSection").classList.toggle("hidden", isRegister);
+
+    $("registerSection").classList.toggle("hidden", !isRegister);
+
+    $("authBrandTitle").textContent = isRegister
+        ? "Create your account 🚀"
+        : "Welcome back 👋";
+
+    $("authBrandSub").textContent = isRegister
+        ? "Start tracking your study progress today."
+        : "Login to continue your study journey.";
+
+    $("authTopNote").textContent = isRegister
+        ? "Already have an account?"
+        : "New here?";
+
+    $("showLoginButton").textContent = isRegister
+        ? "Login →"
+        : "Register →";
+
+    $("loginMessage").textContent = "";
+
+    $("registerMessage").textContent = "";
+}
 
 function showLoginPage() {
+    showAuthView("login");
+}
 
-    const authShell =
-        document.querySelector(".auth-shell");
+function showRegisterPage() {
+    showAuthView("register");
+}
 
-    if (authShell) {
-        authShell.classList.remove("hidden");
-    }
+function forceLogout() {
 
-    loginSection.classList.remove("hidden");
-    registerSection.classList.add("hidden");
+    localStorage.removeItem("token");
 
-    dashboard.classList.add("hidden");
-    subjectsSection.classList.add("hidden");
-    studySection.classList.add("hidden");
-    quizzesSection.classList.add("hidden");
+    quizSession = null;
+
+    stopTimerTick();
+
+    sessionStart = null;
+
+    showLoginPage();
 }
 
 
-function showAuthenticatedPage() {
+/* ============================================================
+   Core data loading (parallel)
+   ============================================================ */
 
-    const authShell =
-        document.querySelector(".auth-shell");
+async function loadCoreData() {
 
-    if (authShell) {
-        authShell.classList.add("hidden");
+    const token =
+        localStorage.getItem("token");
+
+    if (!token) {
+
+        forceLogout();
+
+        return;
     }
 
-    loginSection.classList.add("hidden");
-    registerSection.classList.remove("hidden");
+    const [profile, stats, subjects, history, quizzes, attempts] =
+        await Promise.all([
 
-    dashboard.classList.remove("hidden");
-    subjectsSection.classList.remove("hidden");
-    studySection.classList.remove("hidden");
-    quizzesSection.classList.remove("hidden");
-}
+            apiRequest("/api/users/profile"),
 
+            apiRequest("/api/study-stats"),
 
-function formatDuration(seconds) {
+            apiRequest("/api/subjects"),
 
-    if (!seconds || seconds <= 0) {
-        return "0 min";
-    }
+            apiRequest("/api/study-sessions/history"),
 
-    const totalSeconds =
-        Math.round(seconds);
+            apiRequest("/api/quizzes"),
 
-    const hours =
-        Math.floor(
-            totalSeconds / 3600
+            apiRequest("/api/quiz-attempts")
+        ]);
+
+    state.profile = profile;
+
+    state.stats = stats;
+
+    state.subjects = Array.isArray(subjects) ? subjects : [];
+
+    state.history = Array.isArray(history) ? history : [];
+
+    state.quizzes = Array.isArray(quizzes) ? quizzes : [];
+
+    state.attempts = Array.isArray(attempts) ? attempts : [];
+
+    // Question counts per quiz (honest "N questions" badges)
+    const counts =
+
+        await Promise.all(
+
+            state.quizzes.map((quiz) =>
+
+                apiRequest(`/api/quizzes/${quiz.id}/questions`)
+                    .then((questions) => [quiz.id, Array.isArray(questions) ? questions.length : null])
+                    .catch(() => [quiz.id, null])
+            )
         );
 
-    const minutes =
-        Math.floor(
-            (totalSeconds % 3600) / 60
+    state.questionCounts =
+        Object.fromEntries(counts);
+
+    renderUserChip();
+}
+
+async function reloadDataSilently() {
+
+    try {
+
+        await loadCoreData();
+
+    } catch (error) {
+
+        if (error.status === 401) {
+
+            forceLogout();
+
+        } else {
+
+            showToast(error.message, "error");
+        }
+    }
+}
+
+function subjectNameById(subjectId) {
+
+    const subject =
+        state.subjects.find((s) => s.id === subjectId);
+
+    return subject
+        ? subject.name
+        : `Subject #${subjectId}`;
+}
+
+function quizById(quizId) {
+
+    return state.quizzes.find((q) => q.id === quizId) || null;
+}
+
+function averageScore() {
+
+    if (state.attempts.length === 0) {
+        return null;
+    }
+
+    const sum =
+        state.attempts.reduce(
+            (acc, attempt) => acc + (attempt.percentage || 0),
+            0
         );
 
-    const remainingSeconds =
-        totalSeconds % 60;
-
-    if (hours > 0) {
-
-        return `${hours}h ${minutes}m`;
-    }
-
-    if (minutes > 0) {
-
-        return `${minutes} min`;
-    }
-
-    return `${remainingSeconds} sec`;
+    return Math.round(sum / state.attempts.length);
 }
+
+
+/* ============================================================
+   Sidebar + top bar wiring
+   ============================================================ */
+
+function renderUserChip() {
+
+    if (!state.profile) {
+        return;
+    }
+
+    const name =
+        state.profile.name || "Student";
+
+    $("userDisplayName").textContent =
+        name;
+
+    $("userAvatar").textContent =
+        name.trim().charAt(0).toUpperCase() || "S";
+}
+
+function closeSidebar() {
+
+    $("appShell")?.classList.remove("sidebar-open");
+
+    $("sidebarBackdrop")?.classList.add("hidden");
+}
+
+function initShell() {
+
+    // Sidebar navigation
+    document.querySelectorAll(".sidebar-item")
+        .forEach((item) => {
+
+            item.addEventListener("click", () => {
+
+                window.location.hash =
+                    `#${item.dataset.view}`;
+
+                showView(item.dataset.view);
+            });
+        });
+
+    // Mobile sidebar
+    $("sidebarToggle").addEventListener("click", () => {
+
+        const shell =
+            $("appShell");
+
+        const open =
+            shell.classList.toggle("sidebar-open");
+
+        $("sidebarBackdrop").classList.toggle("hidden", !open);
+    });
+
+    $("sidebarBackdrop").addEventListener("click", closeSidebar);
+
+    // Notification bell (no notifications API yet)
+    $("notificationBell").addEventListener("click", () => {
+
+        showToast("Notifications are coming soon.", "info");
+    });
+
+    // User menu
+    const userMenu =
+        $("userMenu");
+
+    $("userChip").addEventListener("click", (event) => {
+
+        event.stopPropagation();
+
+        const rect =
+            $("userChip").getBoundingClientRect();
+
+        userMenu.style.top =
+            `${rect.bottom + 8}px`;
+
+        userMenu.style.right =
+            `${window.innerWidth - rect.right}px`;
+
+        userMenu.style.left =
+            "auto";
+
+        const hidden =
+            userMenu.classList.toggle("hidden");
+
+        $("userChip").setAttribute(
+            "aria-expanded",
+            hidden ? "false" : "true"
+        );
+    });
+
+    document.addEventListener("click", (event) => {
+
+        if (!userMenu.classList.contains("hidden")
+            && !userMenu.contains(event.target)) {
+
+            userMenu.classList.add("hidden");
+        }
+    });
+
+    userMenu.querySelectorAll("[data-view]")
+        .forEach((item) => {
+
+            item.addEventListener("click", () => {
+
+                userMenu.classList.add("hidden");
+
+                window.location.hash =
+                    `#${item.dataset.view}`;
+
+                showView(item.dataset.view);
+            });
+        });
+
+    $("menuLogoutButton").addEventListener("click", () => {
+
+        userMenu.classList.add("hidden");
+
+        forceLogout();
+    });
+
+    // Logout (sidebar)
+    $("logoutButton").addEventListener("click", forceLogout);
+
+    // Global search (client-side filter of the current page)
+    $("globalSearch").addEventListener("input", applySearchFilter);
+}
+
+function applySearchFilter() {
+
+    const query =
+        ($("globalSearch").value || "").trim().toLowerCase();
+
+    if (currentView === "subjects") {
+
+        document.querySelectorAll("#subjectsGrid .subject-card")
+            .forEach((card) => {
+
+                const text =
+                    (card.dataset.search || "").toLowerCase();
+
+                card.classList.toggle(
+                    "hidden",
+                    query !== "" && !text.includes(query)
+                );
+            });
+    }
+
+    if (currentView === "quizzes") {
+
+        document.querySelectorAll("#quizzesList .quiz-row")
+            .forEach((row) => {
+
+                const text =
+                    (row.dataset.search || "").toLowerCase();
+
+                row.classList.toggle(
+                    "hidden",
+                    query !== "" && !text.includes(query)
+                );
+            });
+    }
+
+    if (currentView === "study") {
+
+        document.querySelectorAll("#studyHistoryList tr[data-search]")
+            .forEach((row) => {
+
+                const text =
+                    (row.dataset.search || "").toLowerCase();
+
+                row.classList.toggle(
+                    "hidden",
+                    query !== "" && !text.includes(query)
+                );
+            });
+    }
+}
+
+
+/* ============================================================
+   Auth flows (unchanged API behaviour)
+   ============================================================ */
+
+function initAuth() {
+
+    $("showRegisterButton").addEventListener("click", showRegisterPage);
+
+    $("showLoginButton").addEventListener("click", () => {
+
+        // top bar button: goes to register page when on login, and back when on register
+        const onLogin =
+            !$("loginSection").classList.contains("hidden");
+
+        if (onLogin) {
+            showRegisterPage();
+        } else {
+            showLoginPage();
+        }
+    });
+
+    $("showLoginButton2").addEventListener("click", showLoginPage);
+
+    // Password visibility toggles
+    document.querySelectorAll(".eye-toggle")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                const input =
+                    $(button.dataset.eye);
+
+                if (!input) {
+                    return;
+                }
+
+                input.type =
+                    input.type === "password" ? "text" : "password";
+            });
+        });
+
+    // Login
+    $("loginForm").addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const email =
+            $("loginEmail").value.trim();
+
+        const password =
+            $("loginPassword").value;
+
+        const submitButton =
+            $("loginForm").querySelector('button[type="submit"]');
+
+        $("loginMessage").textContent =
+            "Logging in...";
+
+        setButtonLoading(submitButton, true);
+
+        try {
+
+            const data =
+                await apiRequest(
+                    "/api/users/login",
+                    {
+                        method: "POST",
+                        body: { email, password },
+                        includeAuth: false
+                    }
+                );
+
+            localStorage.setItem("token", data.token);
+
+            $("loginForm").reset();
+
+            $("loginMessage").textContent = "";
+
+            showToast("Welcome back!", "success");
+
+            await loadCoreData();
+
+            enterApp();
+
+        } catch (error) {
+
+            $("loginMessage").textContent =
+                error.message;
+
+            showToast(error.message, "error");
+
+        } finally {
+
+            setButtonLoading(submitButton, false);
+        }
+    });
+
+    // Registration
+    $("registerForm").addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const name =
+            $("registerName").value.trim();
+
+        const email =
+            $("registerEmail").value.trim();
+
+        const password =
+            $("registerPassword").value;
+
+        const submitButton =
+            $("registerForm").querySelector('button[type="submit"]');
+
+        $("registerMessage").textContent =
+            "Creating account...";
+
+        setButtonLoading(submitButton, true);
+
+        try {
+
+            await apiRequest(
+                "/api/users/register",
+                {
+                    method: "POST",
+                    body: { name, email, password },
+                    includeAuth: false
+                }
+            );
+
+            $("registerForm").reset();
+
+            $("registerMessage").textContent =
+                "Registration successful. You can now log in.";
+
+            showToast("Account created - you can now log in.", "success");
+
+        } catch (error) {
+
+            $("registerMessage").textContent =
+                error.message;
+
+            showToast(error.message, "error");
+
+        } finally {
+
+            setButtonLoading(submitButton, false);
+        }
+    });
+}
+
+
+/* ============================================================
+   Entering the app
+   ============================================================ */
+
+function enterApp() {
+
+    $("authShell").classList.add("hidden");
+
+    $("appShell").classList.remove("hidden");
+
+    renderUserChip();
+
+    window.location.hash =
+        "#dashboard";
+
+    showView("dashboard");
+}
+
+
+/* ============================================================
+   Dashboard
+   ============================================================ */
+
+function refreshDashboard() {
+
+    if (!state.profile) {
+        return;
+    }
+
+    $("welcomeMessage").textContent =
+        `Welcome back, ${state.profile.name}! 👋`;
+
+    $("totalStudyTime").textContent =
+        formatDuration(state.stats?.totalStudySeconds);
+
+    $("totalSessions").textContent =
+        state.stats?.totalSessions ?? 0;
+
+    const avg =
+        averageScore();
+
+    $("averageScore").textContent =
+        avg === null ? "—" : `${avg}%`;
+
+    renderActivityList($("recentActivityList"));
+}
+
+
+function buildActivityItems(limit = 5) {
+
+    const items = [];
+
+    state.attempts.forEach((attempt) => {
+
+        const quiz =
+            quizById(attempt.quizId);
+
+        items.push({
+
+            ts: attempt.completedAt,
+
+            icon: "🏆",
+
+            iconClass: "green",
+
+            title: `Completed: ${quiz ? quiz.title : `Quiz #${attempt.quizId}`}`,
+
+            sub: `Score: ${attempt.score}/${attempt.totalQuestions} (${attempt.percentage}%) • ${timeAgo(attempt.completedAt)}`
+        });
+    });
+
+    state.history.forEach((session) => {
+
+        items.push({
+
+            ts: session.startedAt,
+
+            icon: "📖",
+
+            iconClass: "blue",
+
+            title: "Study Session",
+
+            sub: `${formatDuration(session.durationSeconds)} • ${subjectNameById(session.subjectId)} • ${timeAgo(session.startedAt)}`
+        });
+    });
+
+    items.sort((a, b) =>
+
+        new Date(b.ts).getTime() - new Date(a.ts).getTime()
+    );
+
+    return items.slice(0, limit);
+}
+
+
+function renderActivityList(container) {
+
+    if (!container) {
+        return;
+    }
+
+    const items =
+        buildActivityItems(5);
+
+    if (items.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty-state"><span class="empty-emoji">🌱</span>No activity yet - add a subject or take a quiz to get started.</div>';
+
+        return;
+    }
+
+    container.innerHTML =
+        items.map((item) => `
+
+            <div class="activity-item">
+
+                <span class="activity-icon" style="background:var(--${item.iconClass === "green" ? "success-soft" : "info-soft"});">${item.icon}</span>
+
+                <div>
+                    <div class="a-title">${escapeHtml(item.title)}</div>
+                    <div class="a-sub">${escapeHtml(item.sub)}</div>
+                </div>
+
+            </div>
+        `).join("");
+}
+
+
+/* ============================================================
+   Subjects
+   ============================================================ */
+
+const TONES = ["", "tone-blue", "tone-green", "tone-orange", "tone-pink", "tone-violet"];
+
+function subjectSessions(subjectId) {
+
+    return state.history.filter(
+        (session) => session.subjectId === subjectId
+    );
+}
+
+function subjectSeconds(subjectId) {
+
+    return subjectSessions(subjectId)
+        .reduce(
+            (acc, session) => acc + (session.durationSeconds || 0),
+            0
+        );
+}
+
+function renderSubjects() {
+
+    const grid =
+        $("subjectsGrid");
+
+    if (!grid) {
+        return;
+    }
+
+    if (state.subjects.length === 0) {
+
+        grid.innerHTML =
+            '<div class="empty-state" style="grid-column:1/-1;"><span class="empty-emoji">📚</span>No subjects yet - click "Add Subject" to create your first one.</div>';
+
+        return;
+    }
+
+    // Bar = share of total study time (honest relative measure)
+    const maxSeconds =
+        Math.max(
+            1,
+            ...state.subjects.map((subject) => subjectSeconds(subject.id))
+        );
+
+    grid.innerHTML =
+        state.subjects.map((subject, index) => {
+
+            const sessions =
+                subjectSessions(subject.id).length;
+
+            const seconds =
+                subjectSeconds(subject.id);
+
+            const pct =
+                Math.round((seconds / maxSeconds) * 100);
+
+            const letter =
+                (subject.name || "?").trim().charAt(0).toUpperCase();
+
+            return `
+
+                <div class="subject-card ${TONES[index % TONES.length]}" data-search="${escapeHtml(subject.name)} ${escapeHtml(subject.description || "")}">
+
+                    <div class="subject-top">
+
+                        <span class="subject-avatar">${escapeHtml(letter)}</span>
+
+                        <div>
+                            <h3>${escapeHtml(subject.name)}</h3>
+
+                            <div class="subject-meta">
+
+                                ${sessions} session${sessions === 1 ? "" : "s"} • ${formatDuration(seconds)}
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="subject-progress">
+
+                        <div class="progress-track">
+
+                            <div class="progress-fill" style="width:${pct}%;"></div>
+
+                        </div>
+
+                        <span class="progress-label">${formatDuration(seconds)}</span>
+
+                    </div>
+
+                    <div class="subject-actions">
+
+                        <button type="button" class="btn btn-ghost" data-study="${subject.id}">▶ Study</button>
+
+                        <button type="button" class="btn btn-outline" data-view-details="${subject.id}">👁 View</button>
+
+                        <span class="spacer"></span>
+
+                        <button type="button" class="btn-icon" data-edit="${subject.id}" title="Edit subject" aria-label="Edit ${escapeHtml(subject.name)}">✏️</button>
+
+                        <button type="button" class="btn-icon danger" data-delete="${subject.id}" title="Delete subject" aria-label="Delete ${escapeHtml(subject.name)}">🗑️</button>
+
+                    </div>
+
+                </div>
+            `;
+        }).join("");
+
+    // Wire card actions
+    grid.querySelectorAll("[data-study]")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                const select =
+                    $("studySubjectId");
+
+                if (select) {
+                    select.value =
+                        button.dataset.study;
+                }
+
+                window.location.hash =
+                    "#study";
+
+                showView("study");
+            });
+        });
+
+    grid.querySelectorAll("[data-view-details]")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                openSubjectDetails(Number(button.dataset.viewDetails));
+            });
+        });
+
+    grid.querySelectorAll("[data-edit]")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                openSubjectModal(Number(button.dataset.edit));
+            });
+        });
+
+    grid.querySelectorAll("[data-delete]")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                const subject =
+                    state.subjects.find(
+                        (s) => s.id === Number(button.dataset.delete)
+                    );
+
+                if (!subject) {
+                    return;
+                }
+
+                showModal({
+
+                    title: "Delete subject?",
+
+                    bodyHTML: `<p style="color:var(--text-muted);font-size:13.5px;">"${escapeHtml(subject.name)}" will be removed. This cannot be undone.</p>`,
+
+                    okText: "Delete",
+
+                    okClass: "btn-danger",
+
+                    onOk: async () => {
+
+                        await apiRequest(
+                            `/api/subjects/${subject.id}`,
+                            { method: "DELETE" }
+                        );
+
+                        showToast("Subject deleted.", "success");
+
+                        await reloadDataSilently();
+
+                        renderSubjects();
+                    }
+                });
+            });
+        });
+}
+
+
+function openSubjectModal(subjectId = null) {
+
+    const subject =
+        subjectId
+            ? state.subjects.find((s) => s.id === subjectId)
+            : null;
+
+    showModal({
+
+        title: subject ? "Edit Subject" : "Add Subject",
+
+        bodyHTML: `
+            <div>
+                <label for="modalSubjectName">Subject Name</label>
+                <input id="modalSubjectName" class="input" type="text" placeholder="Example: Java"
+                    value="${subject ? escapeHtml(subject.name) : ""}" required>
+            </div>
+            <div>
+                <label for="modalSubjectDescription">Description</label>
+                <input id="modalSubjectDescription" class="input" type="text" placeholder="Short description"
+                    value="${subject ? escapeHtml(subject.description || "") : ""}">
+            </div>
+        `,
+
+        okText: subject ? "Save Changes" : "Add Subject",
+
+        onOk: async () => {
+
+            const name =
+                $("modalSubjectName").value.trim();
+
+            const description =
+                $("modalSubjectDescription").value.trim();
+
+            if (!name) {
+
+                throw new Error("Subject name is required.");
+            }
+
+            if (subject) {
+
+                await apiRequest(
+                    `/api/subjects/${subject.id}`,
+                    { method: "PUT", body: { name, description } }
+                );
+
+                showToast("Subject updated.", "success");
+
+            } else {
+
+                await apiRequest(
+                    "/api/subjects",
+                    { method: "POST", body: { name, description } }
+                );
+
+                showToast("Subject created.", "success");
+            }
+
+            await reloadDataSilently();
+
+            renderSubjects();
+        }
+    });
+}
+
+
+function openSubjectDetails(subjectId) {
+
+    const subject =
+        state.subjects.find((s) => s.id === subjectId);
+
+    if (!subject) {
+        return;
+    }
+
+    const sessions =
+        subjectSessions(subjectId);
+
+    const rows =
+        sessions.length === 0
+
+            ? '<div class="empty-state">No study sessions recorded for this subject yet.</div>'
+
+            : sessions.map((session) => `
+
+                <div class="pf-row">
+                    <span class="pf-icon">📅</span>
+                    <span class="pf-label">${escapeHtml(formatDateTime(session.startedAt))}</span>
+                    <span class="pf-value">${escapeHtml(formatDuration(session.durationSeconds))}</span>
+                </div>
+            `).join("");
+
+    showModal({
+
+        title: subject.name,
+
+        bodyHTML: `
+            <p style="color:var(--text-muted);font-size:13px;margin-bottom:4px;">
+                ${escapeHtml(subject.description || "No description")}
+            </p>
+            <div class="pf-row" style="border-top:1px solid var(--border);">
+                <span class="pf-icon">🕐</span>
+                <span class="pf-label">Total study time</span>
+                <span class="pf-value">${escapeHtml(formatDuration(subjectSeconds(subjectId)))}</span>
+            </div>
+            <div class="pf-row">
+                <span class="pf-icon">🔁</span>
+                <span class="pf-label">Sessions</span>
+                <span class="pf-value">${sessions.length}</span>
+            </div>
+            ${rows}
+        `,
+
+        okText: "Close",
+
+        onOk: null
+    });
+}
+
+
+/* ============================================================
+   Study sessions + timer
+   ============================================================ */
+
+function stopTimerTick() {
+
+    if (timerInterval) {
+
+        clearInterval(timerInterval);
+
+        timerInterval = null;
+    }
+}
+
+function detectRunningSession() {
+
+    const latest =
+        state.history[0];
+
+    if (latest && !latest.endedAt) {
+
+        sessionStart =
+            new Date(latest.startedAt).getTime();
+
+    } else {
+
+        sessionStart =
+            null;
+    }
+}
+
+function renderTimerState() {
+
+    const display =
+        $("sessionTimer");
+
+    const pill =
+        $("timerStatePill");
+
+    const play =
+        $("startSessionBtn");
+
+    const stop =
+        $("stopStudyButton");
+
+    const reset =
+        $("resetTimerBtn");
+
+    if (!display) {
+        return;
+    }
+
+    if (sessionStart) {
+
+        const elapsed =
+            (Date.now() - sessionStart) / 1000;
+
+        display.textContent =
+            formatTimer(elapsed);
+
+        pill.textContent =
+            "Session in progress";
+
+        play.classList.add("hidden");
+
+        stop.classList.remove("hidden");
+
+        reset.disabled =
+            true;
+
+        reset.title =
+            "Stop the session before resetting";
+
+        stopTimerTick();
+
+        timerInterval =
+            setInterval(() => {
+
+                display.textContent =
+                    formatTimer((Date.now() - sessionStart) / 1000);
+
+            }, 1000);
+
+    } else {
+
+        display.textContent =
+            "25:00";
+
+        pill.textContent =
+            "Pomodoro Timer";
+
+        play.classList.remove("hidden");
+
+        stop.classList.add("hidden");
+
+        reset.disabled =
+            false;
+
+        reset.title =
+            "Reset the timer display";
+
+        stopTimerTick();
+    }
+}
+
+function refreshStudy() {
+
+    detectRunningSession();
+
+    renderTimerState();
+
+    $("statStudyTime").textContent =
+        formatDuration(state.stats?.totalStudySeconds);
+
+    // Sessions started today (honest derivation from history)
+    const today =
+        new Date().toDateString();
+
+    const todayCount =
+        state.history.filter(
+            (session) => new Date(session.startedAt).toDateString() === today
+        ).length;
+
+    $("statToday").textContent =
+        `${todayCount} session${todayCount === 1 ? "" : "s"}`;
+
+    $("statTotal").textContent =
+        state.stats?.totalSessions ?? 0;
+
+    renderStudyHistory();
+}
+
+
+function renderStudyHistory() {
+
+    const container =
+        $("studyHistoryList");
+
+    if (!container) {
+        return;
+    }
+
+    if (state.history.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty-state"><span class="empty-emoji">📚</span>No study sessions yet - pick a subject and press Start Session.</div>';
+
+        return;
+    }
+
+    container.innerHTML = `
+
+        <table class="data-table">
+
+            <thead>
+
+                <tr>
+                    <th>Date &amp; Time</th>
+                    <th>Subject</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${state.history.map((session) => {
+
+                    const running =
+                        !session.endedAt;
+
+                    return `
+
+                        <tr data-search="${escapeHtml(subjectNameById(session.subjectId))} ${escapeHtml(formatDateTime(session.startedAt))}">
+
+                            <td>${escapeHtml(formatDateTime(session.startedAt))}</td>
+
+                            <td>
+                                <span class="cell-subject">
+                                    <span class="subject-avatar">${escapeHtml(subjectNameById(session.subjectId).charAt(0).toUpperCase())}</span>
+                                    ${escapeHtml(subjectNameById(session.subjectId))}
+                                </span>
+                            </td>
+
+                            <td>${escapeHtml(formatDuration(session.durationSeconds))}</td>
+
+                            <td>
+                                ${running
+                                    ? '<span class="badge badge-progress">In Progress</span>'
+                                    : '<span class="badge badge-complete">Completed</span>'}
+                            </td>
+
+                            <td>
+                                <button type="button" class="btn btn-outline" style="padding:6px 12px;font-size:12.5px;" data-session="${session.id}">👁 View</button>
+                            </td>
+
+                        </tr>
+                    `;
+                }).join("")}
+
+            </tbody>
+
+        </table>
+    `;
+
+    container.querySelectorAll("[data-session]")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                const session =
+                    state.history.find(
+                        (s) => s.id === Number(button.dataset.session)
+                    );
+
+                if (!session) {
+                    return;
+                }
+
+                showModal({
+
+                    title: "Study session details",
+
+                    bodyHTML: `
+
+                        <div class="pf-row"><span class="pf-icon">📚</span><span class="pf-label">Subject</span><span class="pf-value">${escapeHtml(subjectNameById(session.subjectId))}</span></div>
+
+                        <div class="pf-row"><span class="pf-icon">▶️</span><span class="pf-label">Started</span><span class="pf-value">${escapeHtml(formatDateTime(session.startedAt))}</span></div>
+
+                        <div class="pf-row"><span class="pf-icon">⏹️</span><span class="pf-label">Stopped</span><span class="pf-value">${session.endedAt ? escapeHtml(formatDateTime(session.endedAt)) : "Still running"}</span></div>
+
+                        <div class="pf-row"><span class="pf-icon">🕐</span><span class="pf-label">Duration</span><span class="pf-value">${escapeHtml(formatDuration(session.durationSeconds))}</span></div>
+                    `,
+
+                    okText: "Close",
+
+                    onOk: null
+                });
+            });
+        });
+}
+
+
+function initStudy() {
+
+    $("studyStartForm").addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const subjectId =
+            Number($("studySubjectId").value);
+
+        if (!subjectId) {
+
+            $("studyMessage").textContent =
+                "Please select a subject.";
+
+            showToast("Please select a subject.", "error");
+
+            return;
+        }
+
+        const submitButton =
+            $("studyStartForm").querySelector('button[type="submit"]');
+
+        $("studyMessage").textContent =
+            "Starting study session...";
+
+        setButtonLoading(submitButton, true);
+
+        try {
+
+            await apiRequest(
+                "/api/study-sessions/start",
+                { method: "POST", body: { subjectId } }
+            );
+
+            $("studyMessage").textContent =
+                "Study session started. 📚";
+
+            showToast("Study session started. Focus!", "success");
+
+            await reloadDataSilently();
+
+            refreshStudy();
+
+        } catch (error) {
+
+            $("studyMessage").textContent =
+                error.message;
+
+            showToast(error.message, "error");
+
+        } finally {
+
+            setButtonLoading(submitButton, false);
+        }
+    });
+
+    // Big play button submits the same form
+    $("startSessionBtn").addEventListener("click", () => {
+
+        $("studyStartForm").requestSubmit();
+    });
+
+    $("stopStudyButton").addEventListener("click", async () => {
+
+        $("studyMessage").textContent =
+            "Stopping study session...";
+
+        setButtonLoading($("stopStudyButton"), true);
+
+        try {
+
+            const result =
+                await apiRequest(
+                    "/api/study-sessions/stop",
+                    { method: "POST" }
+                );
+
+            $("studyMessage").textContent =
+                `Session completed: ${formatDuration(result.durationSeconds)}`;
+
+            showToast(
+                `Session completed: ${formatDuration(result.durationSeconds)}`,
+                "success"
+            );
+
+            await reloadDataSilently();
+
+            refreshStudy();
+
+        } catch (error) {
+
+            $("studyMessage").textContent =
+                error.message;
+
+            showToast(error.message, "error");
+
+        } finally {
+
+            setButtonLoading($("stopStudyButton"), false);
+        }
+    });
+
+    $("resetTimerBtn").addEventListener("click", () => {
+
+        if (!sessionStart) {
+
+            $("sessionTimer").textContent =
+                "25:00";
+        }
+    });
+}
+
+
+/* ============================================================
+   Quizzes (management)
+   ============================================================ */
+
+let quizFilter =
+    "all";
+
+function renderQuizzes() {
+
+    const container =
+        $("quizzesList");
+
+    if (!container) {
+        return;
+    }
+
+    const quizzes =
+        state.quizzes;
+
+    if (quizzes.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty-state"><span class="empty-emoji">📝</span>No quizzes yet - create one manually or generate one with AI.</div>';
+
+        return;
+    }
+
+    const visible =
+        quizzes.filter((quiz) => {
+
+            if (quizFilter === "manual") {
+                return !quiz.aiGenerated;
+            }
+
+            if (quizFilter === "ai") {
+                return quiz.aiGenerated;
+            }
+
+            return true;
+        });
+
+    if (visible.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty-state">No quizzes match this filter.</div>';
+
+        return;
+    }
+
+    container.innerHTML =
+        visible.map((quiz) => {
+
+            const count =
+                state.questionCounts[quiz.id];
+
+            const countText =
+                count === null || count === undefined
+                    ? ""
+                    : `<span class="meta-pill">📋 ${count} question${count === 1 ? "" : "s"}</span>`;
+
+            const letter =
+                (quiz.title || "?").trim().charAt(0).toUpperCase();
+
+            return `
+
+                <div class="quiz-row" data-search="${escapeHtml(quiz.title)} ${escapeHtml(quiz.description || "")}">
+
+                    <span class="q-avatar">${escapeHtml(letter)}</span>
+
+                    <div class="q-info">
+
+                        <h3>${escapeHtml(quiz.title)}</h3>
+
+                        <p>${escapeHtml(quiz.description || "No description")}</p>
+
+                    </div>
+
+                    <div class="q-meta">
+
+                        ${countText}
+
+                        ${quiz.aiGenerated
+                            ? '<span class="badge badge-ai">✨ AI Generated</span>'
+                            : '<span class="badge badge-manual">✍️ Manual</span>'}
+
+                        <button type="button" class="btn btn-primary" data-take="${quiz.id}">Take Quiz ▶</button>
+
+                    </div>
+
+                </div>
+            `;
+        }).join("");
+
+    container.querySelectorAll("[data-take]")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                openQuiz(Number(button.dataset.take));
+            });
+        });
+}
+
+
+function initQuizzes() {
+
+    // Filter chips
+    document.querySelectorAll(".filter-chips .chip")
+        .forEach((chip) => {
+
+            chip.addEventListener("click", () => {
+
+                document.querySelectorAll(".filter-chips .chip")
+                    .forEach((c) => c.classList.remove("active"));
+
+                chip.classList.add("active");
+
+                quizFilter =
+                    chip.dataset.filter;
+
+                renderQuizzes();
+            });
+        });
+
+    // Number stepper for AI questions
+    document.querySelectorAll(".stepper [data-step]")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                const input =
+                    $("aiQuestionCount");
+
+                const next =
+                    Number(input.value) + Number(button.dataset.step);
+
+                const clamped =
+                    Math.min(20, Math.max(1, next));
+
+                input.value =
+                    clamped;
+            });
+        });
+
+    // Manual quiz creation (unchanged API behaviour)
+    $("quizForm").addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const title =
+            $("quizTitle").value.trim();
+
+        const description =
+            $("quizDescription").value.trim();
+
+        const submitButton =
+            $("quizForm").querySelector('button[type="submit"]');
+
+        $("quizMessage").textContent =
+            "Creating quiz...";
+
+        setButtonLoading(submitButton, true);
+
+        try {
+
+            await apiRequest(
+                "/api/quizzes",
+                { method: "POST", body: { title, description } }
+            );
+
+            $("quizForm").reset();
+
+            $("quizMessage").textContent =
+                "Quiz created successfully.";
+
+            showToast("Quiz created.", "success");
+
+            await reloadDataSilently();
+
+            renderQuizzes();
+
+        } catch (error) {
+
+            $("quizMessage").textContent =
+                error.message;
+
+            showToast(error.message, "error");
+
+        } finally {
+
+            setButtonLoading(submitButton, false);
+        }
+    });
+
+    // AI quiz generation (unchanged API behaviour)
+    $("aiQuizForm").addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const topic =
+            $("aiTopic").value.trim();
+
+        const numberOfQuestions =
+            Number($("aiQuestionCount").value);
+
+        const difficulty =
+            $("aiDifficulty").value;
+
+        const submitButton =
+            $("aiQuizForm").querySelector('button[type="submit"]');
+
+        $("aiQuizMessage").textContent =
+            "Generating AI quiz... 🤖";
+
+        setButtonLoading(submitButton, true);
+
+        try {
+
+            const quiz =
+                await apiRequest(
+                    "/api/ai-quizzes/generate",
+                    {
+                        method: "POST",
+                        body: { topic, numberOfQuestions, difficulty }
+                    }
+                );
+
+            $("aiQuizForm").reset();
+
+            $("aiQuestionCount").value =
+                5;
+
+            $("aiDifficulty").value =
+                "medium";
+
+            $("aiQuizMessage").textContent =
+                `AI quiz "${quiz.title}" created successfully.`;
+
+            showToast(`AI quiz "${quiz.title}" created.`, "success");
+
+            await reloadDataSilently();
+
+            openQuiz(quiz.quizId);
+
+        } catch (error) {
+
+            $("aiQuizMessage").textContent =
+                error.message;
+
+            showToast(error.message, "error");
+
+        } finally {
+
+            setButtonLoading(submitButton, false);
+        }
+    });
+}
+
+
+/* ============================================================
+   Quiz taking (one question at a time + palette)
+   ============================================================ */
+
+async function openQuiz(quizId) {
+
+    try {
+
+        const [quiz, questions] =
+            await Promise.all([
+
+                apiRequest(`/api/quizzes/${quizId}`),
+
+                apiRequest(`/api/quizzes/${quizId}/questions`)
+            ]);
+
+        quizSession = {
+
+            quiz: quiz,
+
+            questions: Array.isArray(questions) ? questions : [],
+
+            idx: 0,
+
+            answers: {}
+        };
+
+        $("quizResultMessage").textContent = "";
+
+        window.location.hash =
+            "#quiz";
+
+        showView("quiz");
+
+    } catch (error) {
+
+        showToast(error.message, "error");
+    }
+}
+
+
+function renderQuizQuestion() {
+
+    if (!quizSession) {
+        return;
+    }
+
+    const { quiz, questions, idx } =
+        quizSession;
+
+    $("quizTakeTitle").textContent =
+        quiz.title;
+
+    $("quizTakeSub").textContent =
+        quiz.description || "";
+
+    const question =
+        questions[idx];
+
+    $("quizProgressText").textContent =
+        `${idx + 1} / ${questions.length}`;
+
+    const answeredCount =
+        Object.keys(quizSession.answers).length;
+
+    const pct =
+        questions.length === 0
+            ? 0
+            : Math.round((answeredCount / questions.length) * 100);
+
+    $("quizProgressBar").style.width =
+        `${pct}%`;
+
+    $("quizProgressLabel").textContent =
+        `${pct}%`;
+
+    if (!question) {
+
+        $("questionText").textContent =
+            "This quiz has no questions yet.";
+
+        $("optionsList").innerHTML =
+            '<div class="empty-state">Add questions to this quiz before taking it.</div>';
+
+        $("resetAnswerBtn").disabled =
+            true;
+
+        $("prevQuestionBtn").disabled =
+            true;
+
+        $("nextQuestionBtn").disabled =
+            true;
+
+        $("submitQuizButton").disabled =
+            true;
+
+        renderPalette();
+
+        return;
+    }
+
+    $("resetAnswerBtn").disabled =
+        false;
+
+    $("prevQuestionBtn").disabled =
+        idx === 0;
+
+    $("submitQuizButton").disabled =
+        false;
+
+    $("questionText").textContent =
+        `${idx + 1}. ${question.questionText}`;
+
+    const selected =
+        quizSession.answers[question.id];
+
+    const options = [
+
+        ["A", question.optionA],
+        ["B", question.optionB],
+        ["C", question.optionC],
+        ["D", question.optionD]
+    ];
+
+    $("optionsList").innerHTML =
+        options.map(([letter, text]) => `
+
+            <label class="option-label ${selected === letter ? "selected" : ""}">
+
+                <input type="radio" name="option" value="${letter}"
+
+                    ${selected === letter ? "checked" : ""}>
+
+                <span class="opt-letter">${letter}.</span>
+
+                <span>${escapeHtml(text)}</span>
+
+            </label>
+        `).join("");
+
+    $("optionsList").querySelectorAll("input[type='radio']")
+        .forEach((radio) => {
+
+            radio.addEventListener("change", () => {
+
+                quizSession.answers[question.id] =
+                    radio.value;
+
+                renderQuizQuestion();
+            });
+        });
+
+    // On the last question the Next button becomes Submit
+    const isLast =
+        idx === questions.length - 1;
+
+    $("nextQuestionBtn").textContent =
+        isLast ? "Submit Quiz 🚩" : "Next Question →";
+
+    $("nextQuestionBtn").classList.toggle("btn-primary", true);
+
+    renderPalette();
+}
+
+
+function renderPalette() {
+
+    const container =
+        $("paletteButtons");
+
+    if (!container || !quizSession) {
+        return;
+    }
+
+    container.innerHTML =
+        quizSession.questions.map((question, index) => {
+
+            const isCurrent =
+                index === quizSession.idx;
+
+            const isAnswered =
+                quizSession.answers[question.id] !== undefined;
+
+            const classes = [
+
+                "palette-btn",
+
+                isCurrent ? "current" : (isAnswered ? "answered" : "")
+            ].join(" ");
+
+            return `
+
+                <button type="button" class="${classes}" data-jump="${index}"
+
+                    aria-label="Go to question ${index + 1}">
+
+                    ${index + 1}
+
+                </button>
+            `;
+        }).join("");
+
+    container.querySelectorAll("[data-jump]")
+        .forEach((button) => {
+
+            button.addEventListener("click", () => {
+
+                quizSession.idx =
+                    Number(button.dataset.jump);
+
+                renderQuizQuestion();
+            });
+        });
+}
+
+
+function submitQuizSession() {
+
+    if (!quizSession) {
+        return;
+    }
+
+    const { quiz, questions } =
+        quizSession;
+
+    const unanswered =
+        questions.filter(
+            (question) => quizSession.answers[question.id] === undefined
+        );
+
+    if (unanswered.length > 0) {
+
+        $("quizResultMessage").textContent =
+            `Please answer every question (${unanswered.length} left).`;
+
+        showToast(
+            `Please answer every question (${unanswered.length} left).`,
+            "error"
+        );
+
+        return;
+    }
+
+    const answers =
+        questions.map((question) => ({
+
+            questionId: question.id,
+
+            selectedAnswer: quizSession.answers[question.id]
+        }));
+
+    const submitButton =
+        $("submitQuizButton");
+
+    $("quizResultMessage").textContent =
+        "Submitting quiz...";
+
+    setButtonLoading(submitButton, true);
+
+    apiRequest(
+        "/api/quiz-submissions",
+        { method: "POST", body: { quizId: quiz.id, answers } }
+    )
+
+        .then(async (result) => {
+
+            state.lastResult =
+                result;
+
+            $("quizResultMessage").textContent = "";
+
+            showToast(
+                `You scored ${result.score}/${result.totalQuestions} (${result.percentage}%)`,
+                "success"
+            );
+
+            quizSession =
+                null;
+
+            await reloadDataSilently();
+
+            window.location.hash =
+                "#results";
+
+            showView("results");
+
+        })
+
+        .catch((error) => {
+
+            $("quizResultMessage").textContent =
+                error.message;
+
+            showToast(error.message, "error");
+
+        })
+
+        .finally(() => {
+
+            setButtonLoading(submitButton, false);
+        });
+}
+
+
+function initQuizTaking() {
+
+    $("backToQuizzes").addEventListener("click", () => {
+
+        quizSession =
+            null;
+
+        window.location.hash =
+            "#quizzes";
+
+        showView("quizzes");
+    });
+
+    $("resetAnswerBtn").addEventListener("click", () => {
+
+        if (!quizSession) {
+            return;
+        }
+
+        const question =
+            quizSession.questions[quizSession.idx];
+
+        if (question) {
+
+            delete quizSession.answers[question.id];
+
+            renderQuizQuestion();
+        }
+    });
+
+    $("prevQuestionBtn").addEventListener("click", () => {
+
+        if (quizSession && quizSession.idx > 0) {
+
+            quizSession.idx -= 1;
+
+            renderQuizQuestion();
+        }
+    });
+
+    $("nextQuestionBtn").addEventListener("click", () => {
+
+        if (!quizSession) {
+            return;
+        }
+
+        if (quizSession.idx < quizSession.questions.length - 1) {
+
+            quizSession.idx += 1;
+
+            renderQuizQuestion();
+
+        } else {
+
+            submitQuizSession();
+        }
+    });
+
+    $("submitQuizButton").addEventListener("click", submitQuizSession);
+}
+
+
+/* ============================================================
+   Results
+   ============================================================ */
+
+function refreshResults() {
+
+    const banner =
+        $("resultsBanner");
+
+    // The latest attempt: the one just submitted, or the most recent one
+    const latest =
+        state.lastResult
+
+            ? {
+
+                ...state.lastResult,
+
+                quiz: quizById(state.lastResult.quizId)
+            }
+
+            : (state.attempts.length > 0
+
+                ? {
+
+                    ...state.attempts[0],
+
+                    quiz: quizById(state.attempts[0].quizId)
+                }
+
+                : null);
+
+    if (!latest) {
+
+        banner.classList.add("hidden");
+
+        $("scorePercent").textContent =
+            "—";
+
+        $("resultQuizTitle").textContent =
+            "No attempts yet";
+
+        $("resultQuizBadge").textContent =
+            "—";
+
+        $("resultQuizDesc").textContent =
+            "Take a quiz to see your results here.";
+
+        $("resultCompletedOn").textContent =
+            "";
+
+        $("resultCorrect").textContent =
+            "0";
+
+        $("resultIncorrect").textContent =
+            "0";
+
+        $("resultTotal").textContent =
+            "0";
+
+        setScoreRing(0);
+
+        renderScoreTrend();
+
+        renderAttempts();
+
+        return;
+    }
+
+    banner.classList.remove("hidden");
+
+    const quiz =
+        latest.quiz;
+
+    $("resultQuizTitle").textContent =
+        quiz ? quiz.title : `Quiz #${latest.quizId}`;
+
+    const badge =
+        $("resultQuizBadge");
+
+    badge.textContent =
+        quiz && quiz.aiGenerated ? "✨ AI Generated" : "✍️ Manual";
+
+    badge.className =
+        quiz && quiz.aiGenerated ? "badge badge-ai" : "badge badge-manual";
+
+    $("resultQuizDesc").textContent =
+        quiz && quiz.description ? quiz.description : "";
+
+    $("resultCompletedOn").textContent =
+        `Completed on ${formatDateTime(latest.completedAt)}`;
+
+    $("resultCorrect").textContent =
+        latest.score;
+
+    $("resultIncorrect").textContent =
+        Math.max(0, latest.totalQuestions - latest.score);
+
+    $("resultTotal").textContent =
+        latest.totalQuestions;
+
+    setScoreRing(latest.percentage || 0);
+
+    renderScoreTrend();
+
+    renderAttempts();
+}
+
+
+function setScoreRing(percentage) {
+
+    const circumference =
+        439.8;
+
+    const ring =
+        $("scoreRingFg");
+
+    ring.style.strokeDashoffset =
+        circumference * (1 - percentage / 100);
+
+    ring.style.stroke =
+        percentage >= 50
+            ? "var(--success)"
+            : percentage >= 30
+                ? "var(--warning)"
+                : "var(--danger)";
+
+    $("scorePercent").textContent =
+        `${Math.round(percentage)}%`;
+}
+
+
+function renderScoreTrend() {
+
+    const container =
+        $("scoreTrendList");
+
+    if (!container) {
+        return;
+    }
+
+    if (state.attempts.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty-state">No attempts yet.</div>';
+
+        return;
+    }
+
+    const recent =
+        state.attempts.slice(0, 6).reverse();
+
+    container.innerHTML =
+        recent.map((attempt, index) => {
+
+            const quiz =
+                quizById(attempt.quizId);
+
+            const label =
+                quiz ? quiz.title : `Quiz #${attempt.quizId}`;
+
+            const pct =
+                Math.round(attempt.percentage || 0);
+
+            return `
+
+                <div class="trend-item">
+
+                    <span class="t-label" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+
+                    <div class="progress-track">
+
+                        <div class="progress-fill" style="width:${pct}%;"></div>
+
+                    </div>
+
+                    <span class="t-value">${pct}%</span>
+
+                </div>
+            `;
+        }).join("");
+}
+
+
+function renderAttempts() {
+
+    const container =
+        $("quizAttemptsList");
+
+    if (!container) {
+        return;
+    }
+
+    if (state.attempts.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty-state"><span class="empty-emoji">📝</span>No quiz attempts yet - open a quiz and test yourself.</div>';
+
+        return;
+    }
+
+    container.innerHTML = `
+
+        <table class="data-table">
+
+            <thead>
+
+                <tr>
+                    <th>Quiz</th>
+                    <th>Score</th>
+                    <th>Percentage</th>
+                    <th>Completed</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${state.attempts.map((attempt) => {
+
+                    const quiz =
+                        quizById(attempt.quizId);
+
+                    const pct =
+                        Math.round(attempt.percentage || 0);
+
+                    return `
+
+                        <tr>
+
+                            <td style="font-weight:600;">${escapeHtml(quiz ? quiz.title : `Quiz #${attempt.quizId}`)}</td>
+
+                            <td>${attempt.score} / ${attempt.totalQuestions}</td>
+
+                            <td>
+
+                                <span class="badge ${pct >= 50 ? "badge-complete" : "badge-incorrect"}">${pct}%</span>
+
+                            </td>
+
+                            <td>${escapeHtml(formatDateTime(attempt.completedAt))}</td>
+
+                        </tr>
+                    `;
+                }).join("")}
+
+            </tbody>
+
+        </table>
+    `;
+}
+
+
+function initResults() {
+
+    $("takeAnotherQuiz").addEventListener("click", () => {
+
+        window.location.hash =
+            "#quizzes";
+
+        showView("quizzes");
+    });
+}
+
+
+/* ============================================================
+   Profile
+   ============================================================ */
+
+function refreshProfile() {
+
+    if (!state.profile) {
+        return;
+    }
+
+    const name =
+        state.profile.name || "Student";
+
+    $("profileName").textContent =
+        name;
+
+    $("profileEmail").textContent =
+        state.profile.email || "";
+
+    $("profileAvatar").textContent =
+        name.trim().charAt(0).toUpperCase() || "S";
+
+    $("pfStudyTime").textContent =
+        formatDuration(state.stats?.totalStudySeconds);
+
+    $("pfSessions").textContent =
+        state.stats?.totalSessions ?? 0;
+
+    const avg =
+        averageScore();
+
+    $("pfAvgScore").textContent =
+        avg === null ? "—" : `${avg}%`;
+
+    $("pfQuizzesCompleted").textContent =
+        state.attempts.length;
+
+    renderActivityList($("profileActivityList"));
+}
+
+
+function initProfile() {
+
+    $("profileStartStudying").addEventListener("click", () => {
+
+        window.location.hash =
+            "#study";
+
+        showView("study");
+    });
+
+    $("profileActivityAll").addEventListener("click", () => {
+
+        window.location.hash =
+            "#results";
+
+        showView("results");
+    });
+}
+
+
+/* ============================================================
+   Settings
+   ============================================================ */
+
+function renderSettings() {
+
+    if (state.profile) {
+
+        $("settingsName").value =
+            state.profile.name || "";
+
+        $("settingsEmail").value =
+            state.profile.email || "";
+    }
+
+    markThemeSelection();
+}
+
+
+function markThemeSelection() {
+
+    const pref =
+        getThemePreference();
+
+    document.querySelectorAll("#themeOptions .theme-option")
+        .forEach((option) => {
+
+            option.classList.toggle(
+                "selected",
+                option.dataset.themeChoice === pref
+            );
+        });
+}
+
+
+function initSettings() {
+
+    document.querySelectorAll("#themeOptions .theme-option")
+        .forEach((option) => {
+
+            option.addEventListener("click", () => {
+
+                const pref =
+                    option.dataset.themeChoice;
+
+                localStorage.setItem("theme", pref);
+
+                applyTheme(pref);
+
+                markThemeSelection();
+            });
+        });
+
+    $("saveSettingsBtn").addEventListener("click", () => {
+
+        showToast("Settings saved. Appearance updated.", "success");
+    });
+}
+
+
+/* ============================================================
+   Dashboard quick actions + misc wiring
+   ============================================================ */
+
+function initDashboard() {
+
+    $("dashboardStartStudying").addEventListener("click", () => {
+
+        window.location.hash =
+            "#study";
+
+        showView("study");
+    });
+
+    $("quickAddSubject").addEventListener("click", () => {
+
+        openSubjectModal();
+    });
+
+    $("quickStartStudy").addEventListener("click", () => {
+
+        window.location.hash =
+            "#study";
+
+        showView("study");
+    });
+
+    $("quickTakeQuiz").addEventListener("click", () => {
+
+        window.location.hash =
+            "#quizzes";
+
+        showView("quizzes");
+    });
+
+    $("quickAiQuiz").addEventListener("click", () => {
+
+        window.location.hash =
+            "#quizzes";
+
+        showView("quizzes");
+
+        setTimeout(() => {
+
+            $("aiTopic")?.focus();
+
+        }, 250);
+    });
+
+    $("nextSessionStart").addEventListener("click", () => {
+
+        window.location.hash =
+            "#study";
+
+        showView("study");
+    });
+
+    $("recentActivityAll").addEventListener("click", () => {
+
+        window.location.hash =
+            "#results";
+
+        showView("results");
+    });
+
+    $("addSubjectBtn").addEventListener("click", () => {
+
+        openSubjectModal();
+    });
+}
+
+
+/* ============================================================
+   Init
+   ============================================================ */
+
+function init() {
+
+    initTheme();
+
+    initAuth();
+
+    initShell();
+
+    initDashboard();
+
+    initStudy();
+
+    initQuizzes();
+
+    initQuizTaking();
+
+    initResults();
+
+    initProfile();
+
+    initSettings();
+
+    window.addEventListener("hashchange", routeFromHash);
+
+    // Initial route
+    if (localStorage.getItem("token")) {
+
+        loadCoreData()
+
+            .then(() => {
+
+                enterApp();
+
+                detectRunningSession();
+
+                renderTimerState();
+
+            })
+
+            .catch((error) => {
+
+                if (error.status === 401) {
+
+                    forceLogout();
+
+                } else {
+
+                    showToast(error.message, "error");
+
+                    enterApp();
+                }
+            });
+
+    } else {
+
+        showLoginPage();
+    }
+}
+
+
+document.addEventListener("DOMContentLoaded", init);
