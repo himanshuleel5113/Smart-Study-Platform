@@ -522,6 +522,7 @@ function showView(name) {
     if (name === "subjects") renderSubjects();
     if (name === "study") refreshStudy();
     if (name === "quizzes") renderQuizzes();
+    if (name === "quiz") renderQuizQuestion();
     if (name === "results") refreshResults();
     if (name === "profile") refreshProfile();
     if (name === "settings") renderSettings();
