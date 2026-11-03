@@ -1225,6 +1225,40 @@ function renderSubjects() {
     const grid =
         $("subjectsGrid");
 
+    // Keep the study-session dropdown in sync with the subject list
+    const select =
+        $("studySubjectId");
+
+    if (select) {
+
+        const previous =
+            select.value;
+
+        select.innerHTML =
+            '<option value="">Select a subject</option>';
+
+        state.subjects.forEach((subject) => {
+
+            const option =
+                document.createElement("option");
+
+            option.value =
+                subject.id;
+
+            option.textContent =
+                subject.name;
+
+            select.appendChild(option);
+        });
+
+        // restore the previous selection when it still exists
+        if (previous && state.subjects.some((s) => String(s.id) === previous)) {
+
+            select.value =
+                previous;
+        }
+    }
+
     if (!grid) {
         return;
     }
@@ -1814,6 +1848,15 @@ function initStudy() {
 
     // Big play button submits the same form
     $("startSessionBtn").addEventListener("click", () => {
+
+        if (!$("studySubjectId").value) {
+
+            showToast("Please select a subject first.", "error");
+
+            $("studySubjectId").focus();
+
+            return;
+        }
 
         $("studyStartForm").requestSubmit();
     });
