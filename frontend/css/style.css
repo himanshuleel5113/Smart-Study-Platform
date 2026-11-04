@@ -2747,6 +2747,26 @@ html[data-theme="dark"] .quiz-topbar-card {
 
 /* ---------------- Results ---------------- */
 
+.results-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    gap: 18px;
+    align-items: start;
+}
+.answer-review-card { margin-top: 20px; }
+.answer-review { padding: 18px 0; border-top: 1px solid var(--border); }
+.answer-review h3 { font-size: 14px; margin-bottom: 12px; }
+.answer-review .badge { margin-right: 8px; }
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .results-banner {
 
     display: flex;
@@ -3330,6 +3350,7 @@ html[data-theme="dark"] .quiz-topbar-card {
     .quiz-create-grid,
     .quiz-taking-grid,
     .results-head,
+    .results-cols,
     .profile-grid,
     .settings-grid {
         grid-template-columns: 1fr;

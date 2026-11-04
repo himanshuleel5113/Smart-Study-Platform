@@ -1935,7 +1935,7 @@
 
                         <h2 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
 
-                            <span id="resultQuizTitle">
+                            <span id="resultQuizTitle" tabindex="-1">
                                 —
                             </span>
 
@@ -2003,7 +2003,7 @@
                 </div>
 
                 <div
-                        style="display:grid;grid-template-columns:1fr 1.3fr;gap:18px;align-items:start;"
+                        
                         class="results-cols"
                 >
 
@@ -2038,6 +2038,11 @@
                     </div>
 
                 </div>
+
+                <section class="card answer-review-card" aria-labelledby="answerReviewTitle">
+                    <h3 id="answerReviewTitle">Review Your Answers</h3>
+                    <div id="answerReviewList"></div>
+                </section>
 
             </section>
 

@@ -343,6 +343,8 @@ let quizSession = null;   // {quiz, questions, idx, answers{}}
 let sessionStart = null;  // ms timestamp of the running study session
 let timerInterval = null;
 let quizSubmitting = false;
+let selectedResultId = null;
+let lastAnswerReview = null;
 
 
 /* ============================================================
@@ -621,6 +623,9 @@ function showRegisterPage() {
 }
 
 function forceLogout() {
+    selectedResultId = null;
+    lastAnswerReview = null;
+    state.lastResult = null;
 
     localStorage.removeItem("token");
 
@@ -2579,6 +2584,11 @@ function submitQuizSession() {
     )
 
         .then(async (result) => {
+            selectedResultId = null;
+            lastAnswerReview = {
+                attemptId: result.attemptId,
+                questions: questions.map((question) => ({ ...question, selectedAnswer: quizSession.answers[question.id] }))
+            };
 
             state.lastResult =
                 result;
@@ -2694,13 +2704,32 @@ function initQuizTaking() {
    Results
    ============================================================ */
 
+function renderAnswerReview() {
+    const container = $("answerReviewList");
+    const displayedId = selectedResultId || state.lastResult?.attemptId || state.attempts[0]?.attemptId;
+    if (!lastAnswerReview || lastAnswerReview.attemptId !== displayedId) {
+        container.innerHTML = '<p class="card-sub">Saved answer details are coming soon. Your scores remain available in Attempt History.</p>';
+        return;
+    }
+    container.innerHTML = '<p class="card-sub">Your selections from this visit. Correct-answer feedback is coming soon.</p>' +
+        lastAnswerReview.questions.map((question, index) => `
+            <article class="answer-review">
+                <h3>${index + 1}. ${escapeHtml(question.questionText)}</h3>
+                <p><span class="badge badge-ai">Your answer</span> ${escapeHtml(question.selectedAnswer)}.
+                    ${escapeHtml(question[`option${question.selectedAnswer}`])}</p>
+            </article>
+        `).join("");
+}
+
 function refreshResults() {
+    renderAnswerReview();
 
     const banner =
         $("resultsBanner");
 
     // The latest attempt: the one just submitted, or the most recent one
-    const latest =
+    const selectedAttempt = state.attempts.find((attempt) => attempt.attemptId === selectedResultId);
+    const latest = selectedAttempt ? { ...selectedAttempt, quiz: quizById(selectedAttempt.quizId) } :
         state.lastResult
 
             ? {
@@ -2750,6 +2779,7 @@ function refreshResults() {
             "0";
 
         setScoreRing(0);
+        $("scorePercent").textContent = "—";
 
         renderScoreTrend();
 
@@ -2901,6 +2931,7 @@ function renderAttempts() {
                     <th>Score</th>
                     <th>Percentage</th>
                     <th>Completed</th>
+                    <th><span class="sr-only">Actions</span></th>
                 </tr>
 
             </thead>
@@ -2930,6 +2961,7 @@ function renderAttempts() {
                             </td>
 
                             <td>${escapeHtml(formatDateTime(attempt.completedAt))}</td>
+                            <td><button type="button" class="btn btn-outline" data-attempt="${attempt.attemptId}">View</button></td>
 
                         </tr>
                     `;
@@ -2939,8 +2971,15 @@ function renderAttempts() {
 
         </table>
     `;
+    container.querySelectorAll("[data-attempt]").forEach((button) => {
+        button.addEventListener("click", () => {
+            selectedResultId = Number(button.dataset.attempt);
+            refreshResults();
+            $("resultQuizTitle").focus();
+            $("view-results").scrollIntoView({ block: "start", behavior: "instant" });
+        });
+    });
 }
-
 
 function initResults() {
 
