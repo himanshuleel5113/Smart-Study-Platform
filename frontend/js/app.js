@@ -342,6 +342,7 @@ const state = {
 let quizSession = null;   // {quiz, questions, idx, answers{}}
 let sessionStart = null;  // ms timestamp of the running study session
 let timerInterval = null;
+let quizSubmitting = false;
 
 
 /* ============================================================
@@ -2303,6 +2304,7 @@ function initQuizzes() {
    ============================================================ */
 
 async function openQuiz(quizId) {
+    if (quizSubmitting) return;
 
     try {
 
@@ -2340,6 +2342,7 @@ async function openQuiz(quizId) {
 
 
 function renderQuizQuestion() {
+    if (quizSubmitting) return;
 
     if (!quizSession) {
         return;
@@ -2358,7 +2361,7 @@ function renderQuizQuestion() {
         questions[idx];
 
     $("quizProgressText").textContent =
-        `${idx + 1} / ${questions.length}`;
+        `${questions.length ? idx + 1 : 0} / ${questions.length}`;
 
     const answeredCount =
         Object.keys(quizSession.answers).length;
@@ -2373,6 +2376,11 @@ function renderQuizQuestion() {
 
     $("quizProgressLabel").textContent =
         `${pct}%`;
+    $("quizProgressBar").parentElement.setAttribute("role", "progressbar");
+    $("quizProgressBar").parentElement.setAttribute("aria-label", "Questions answered");
+    $("quizProgressBar").parentElement.setAttribute("aria-valuemin", "0");
+    $("quizProgressBar").parentElement.setAttribute("aria-valuemax", "100");
+    $("quizProgressBar").parentElement.setAttribute("aria-valuenow", String(pct));
 
     if (!question) {
 
@@ -2401,6 +2409,7 @@ function renderQuizQuestion() {
 
     $("resetAnswerBtn").disabled =
         false;
+    $("nextQuestionBtn").disabled = false;
 
     $("prevQuestionBtn").disabled =
         idx === 0;
@@ -2447,6 +2456,7 @@ function renderQuizQuestion() {
                     radio.value;
 
                 renderQuizQuestion();
+                $("optionsList").querySelector(`input[value="${radio.value}"]`)?.focus();
             });
         });
 
@@ -2492,7 +2502,7 @@ function renderPalette() {
 
                 <button type="button" class="${classes}" data-jump="${index}"
 
-                    aria-label="Go to question ${index + 1}">
+                    aria-label="Question ${index + 1}, ${isAnswered ? "answered" : "not answered"}" ${isCurrent ? 'aria-current="step"' : ""}>
 
                     ${index + 1}
 
@@ -2515,6 +2525,7 @@ function renderPalette() {
 
 
 function submitQuizSession() {
+    if (quizSubmitting || !quizSession?.questions.length) return;
 
     if (!quizSession) {
         return;
@@ -2556,6 +2567,11 @@ function submitQuizSession() {
         "Submitting quiz...";
 
     setButtonLoading(submitButton, true);
+    quizSubmitting = true;
+    setButtonLoading($("nextQuestionBtn"), true);
+    $("optionsList").inert = true;
+    $("paletteButtons").inert = true;
+    $("backToQuizzes").disabled = true;
 
     apiRequest(
         "/api/quiz-submissions",
@@ -2597,7 +2613,13 @@ function submitQuizSession() {
 
         .finally(() => {
 
+            quizSubmitting = false;
             setButtonLoading(submitButton, false);
+            setButtonLoading($("nextQuestionBtn"), false);
+            $("optionsList").inert = false;
+            $("paletteButtons").inert = false;
+            $("backToQuizzes").disabled = false;
+            if (quizSession) renderQuizQuestion();
         });
 }
 
@@ -2605,6 +2627,7 @@ function submitQuizSession() {
 function initQuizTaking() {
 
     $("backToQuizzes").addEventListener("click", () => {
+        if (quizSubmitting) return;
 
         quizSession =
             null;
@@ -2616,6 +2639,7 @@ function initQuizTaking() {
     });
 
     $("resetAnswerBtn").addEventListener("click", () => {
+        if (quizSubmitting) return;
 
         if (!quizSession) {
             return;
@@ -2633,6 +2657,7 @@ function initQuizTaking() {
     });
 
     $("prevQuestionBtn").addEventListener("click", () => {
+        if (quizSubmitting) return;
 
         if (quizSession && quizSession.idx > 0) {
 
@@ -2643,6 +2668,7 @@ function initQuizTaking() {
     });
 
     $("nextQuestionBtn").addEventListener("click", () => {
+        if (quizSubmitting) return;
 
         if (!quizSession) {
             return;
