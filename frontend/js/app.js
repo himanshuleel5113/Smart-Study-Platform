@@ -2074,13 +2074,19 @@ function renderQuizzes() {
                             ? '<span class="badge badge-ai">✨ AI Generated</span>'
                             : '<span class="badge badge-manual">✍️ Manual</span>'}
 
-                        <button type="button" class="btn btn-primary" data-take="${quiz.id}">Take Quiz ▶</button>
+                        ${!quiz.aiGenerated ? `<button type="button" class="btn btn-outline" data-add-question="${quiz.id}">+ Add Questions</button>` : ""}
+                        <button type="button" class="btn btn-primary" data-take="${quiz.id}" ${count === 0 ? 'disabled title="Add questions before taking this quiz"' : ""}>Take Quiz ▶</button>
 
                     </div>
 
                 </div>
             `;
         }).join("");
+
+    container.querySelectorAll("[data-add-question]").forEach((button) => {
+        button.addEventListener("click", () => openQuestionEditor(Number(button.dataset.addQuestion)));
+    });
+    applySearchFilter();
 
     container.querySelectorAll("[data-take]")
         .forEach((button) => {
@@ -2092,6 +2098,47 @@ function renderQuizzes() {
         });
 }
 
+
+function openQuestionEditor(quizId) {
+    const quiz = quizById(quizId);
+    if (!quiz || quiz.aiGenerated) return;
+    showModal({
+        title: `Add a question to ${quiz.title}`,
+        bodyHTML: `
+            <p class="card-sub">Add one question at a time. Choose the correct answer before saving.</p>
+            <div><label for="editorQuestion">Question</label>
+                <textarea id="editorQuestion" class="input" rows="2" required></textarea></div>
+            <div class="form-row">
+                ${["A", "B", "C", "D"].map((letter) => `
+                    <div><label for="editorOption${letter}">Option ${letter}</label>
+                    <input id="editorOption${letter}" class="input" required></div>
+                `).join("")}
+            </div>
+            <div><label for="editorCorrect">Correct Answer</label>
+                <select id="editorCorrect" class="input" required>
+                    <option value="">Choose the correct option</option>
+                    ${["A", "B", "C", "D"].map((letter) => `<option value="${letter}">Option ${letter}</option>`).join("")}
+                </select></div>`,
+        okText: "Save Question",
+        onOk: async () => {
+            const questionText = $("editorQuestion").value.trim();
+            const optionA = $("editorOptionA").value.trim();
+            const optionB = $("editorOptionB").value.trim();
+            const optionC = $("editorOptionC").value.trim();
+            const optionD = $("editorOptionD").value.trim();
+            const correctAnswer = $("editorCorrect").value;
+            if (![questionText, optionA, optionB, optionC, optionD, correctAnswer].every(Boolean)) {
+                throw new Error("Enter a question, all four options, and the correct answer.");
+            }
+            await apiRequest(`/api/quizzes/${quizId}/questions`, {
+                method: "POST", body: { questionText, optionA, optionB, optionC, optionD, correctAnswer }
+            });
+            await reloadDataSilently();
+            renderQuizzes();
+            showToast("Question saved. Add another question or take your quiz.", "success");
+        }
+    });
+}
 
 function initQuizzes() {
 
@@ -2105,6 +2152,9 @@ function initQuizzes() {
                     .forEach((c) => c.classList.remove("active"));
 
                 chip.classList.add("active");
+                document.querySelectorAll(".filter-chips .chip").forEach((item) =>
+                    item.setAttribute("aria-pressed", String(item === chip))
+                );
 
                 quizFilter =
                     chip.dataset.filter;
