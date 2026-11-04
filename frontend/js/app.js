@@ -519,7 +519,7 @@ function showView(name) {
         else item.removeAttribute("aria-current");
     });
     const titles = { dashboard: "Dashboard", subjects: "Subjects", study: "Study Sessions", quizzes: "Quizzes", quiz: "Take Quiz", results: "Results", profile: "Profile", settings: "Settings" };
-    document.title = `${titles[name]} ? Smart Study Platform`;
+    document.title = `${titles[name]} - Smart Study Platform`;
 
     // Per-view refreshers
     if (name === "dashboard") refreshDashboard();
@@ -577,6 +577,8 @@ function showAuthView(which) {
 
     const isRegister =
         which === "register";
+
+    document.title = `${isRegister ? "Register" : "Login"} - Smart Study Platform`;
 
     $("loginSection").classList.toggle("hidden", isRegister);
 
@@ -967,6 +969,8 @@ function initAuth() {
 
                 input.type =
                     input.type === "password" ? "text" : "password";
+                button.setAttribute("aria-pressed", String(input.type === "text"));
+                button.setAttribute("aria-label", input.type === "text" ? "Hide password" : "Show password");
             });
         });
 
