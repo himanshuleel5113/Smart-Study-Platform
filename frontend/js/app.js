@@ -537,6 +537,12 @@ function showView(name) {
 
     if (search) {
         search.value = "";
+        const labels = { subjects: "Search subjects...", quizzes: "Search quizzes...", study: "Search study history..." };
+        search.disabled = !labels[name];
+        search.placeholder = labels[name] || "Search subjects, quizzes...";
+        search.title = labels[name] ? "Filter the current page" : "Global search coming soon";
+        search.setAttribute("aria-label", labels[name] || "Global search coming soon");
+        $("searchStatus").classList.add("hidden");
     }
 
     // Close the mobile sidebar after navigating
@@ -884,6 +890,16 @@ function applySearchFilter() {
     const query =
         ($("globalSearch").value || "").trim().toLowerCase();
 
+    const selectors = { subjects: "#subjectsGrid .subject-card", quizzes: "#quizzesList .quiz-row", study: "#studyHistoryList tr[data-search]" };
+    const selector = selectors[currentView];
+    if (selector) {
+        const matches = [...document.querySelectorAll(selector)].filter((item) =>
+            (item.dataset.search || "").toLowerCase().includes(query)
+        ).length;
+        $("searchStatus").textContent = matches ? `${matches} matching result${matches === 1 ? "" : "s"}` : "No matches. Try a different search.";
+        $("searchStatus").classList.toggle("hidden", !query);
+    }
+
     if (currentView === "subjects") {
 
         document.querySelectorAll("#subjectsGrid .subject-card")
@@ -1183,14 +1199,21 @@ function buildActivityItems(limit = 5) {
 }
 
 
-function renderActivityList(container) {
+function openActivityHistory() {
+    const content = document.createElement("div");
+    content.className = "activity-list";
+    renderActivityList(content, Infinity);
+    showModal({ title: "Activity History", bodyHTML: content.outerHTML, okText: "Close" });
+}
+
+function renderActivityList(container, limit = 5) {
 
     if (!container) {
         return;
     }
 
     const items =
-        buildActivityItems(5);
+        buildActivityItems(limit);
 
     if (items.length === 0) {
 
@@ -2880,13 +2903,7 @@ function initProfile() {
         showView("study");
     });
 
-    $("profileActivityAll").addEventListener("click", () => {
-
-        window.location.hash =
-            "#results";
-
-        showView("results");
-    });
+    $("profileActivityAll").addEventListener("click", openActivityHistory);
 }
 
 
@@ -3007,13 +3024,7 @@ function initDashboard() {
         showView("study");
     });
 
-    $("recentActivityAll").addEventListener("click", () => {
-
-        window.location.hash =
-            "#results";
-
-        showView("results");
-    });
+    $("recentActivityAll").addEventListener("click", openActivityHistory);
 
     $("addSubjectBtn").addEventListener("click", () => {
 
