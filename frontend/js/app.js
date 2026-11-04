@@ -1612,7 +1612,7 @@ function stopTimerTick() {
 function detectRunningSession() {
 
     const latest =
-        state.history[0];
+        state.history.find((session) => !session.endedAt);
 
     if (latest && !latest.endedAt) {
 
@@ -1645,6 +1645,17 @@ function renderTimerState() {
 
     if (!display) {
         return;
+    }
+
+    const startButton = $("studyStartForm").querySelector('button[type="submit"]');
+    const subjectSelect = $("studySubjectId");
+    const running = Boolean(sessionStart);
+    startButton.disabled = running;
+    startButton.textContent = running ? "Session in progress" : "\u25b6 Start Session";
+    subjectSelect.disabled = running;
+    if (running) {
+        const active = state.history.find((session) => !session.endedAt);
+        if (active) subjectSelect.value = active.subjectId;
     }
 
     if (sessionStart) {
@@ -1681,10 +1692,10 @@ function renderTimerState() {
     } else {
 
         display.textContent =
-            "25:00";
+            "00:00";
 
         pill.textContent =
-            "Pomodoro Timer";
+            "Elapsed study time";
 
         play.classList.remove("hidden");
 
@@ -1844,9 +1855,20 @@ function renderStudyHistory() {
 
 function initStudy() {
 
+    document.querySelectorAll("#view-study .quick-link[data-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+            if (button.dataset.view === "subjects") openSubjectModal();
+            else {
+                window.location.hash = `#${button.dataset.view}`;
+                showView(button.dataset.view);
+            }
+        });
+    });
+
     $("studyStartForm").addEventListener("submit", async (event) => {
 
         event.preventDefault();
+        if (sessionStart || $("studyStartForm").querySelector("button[type=submit]").disabled) return;
 
         const subjectId =
             Number($("studySubjectId").value);
@@ -1868,6 +1890,7 @@ function initStudy() {
             "Starting study session...";
 
         setButtonLoading(submitButton, true);
+        $("startSessionBtn").disabled = true;
 
         try {
 
@@ -1895,6 +1918,8 @@ function initStudy() {
         } finally {
 
             setButtonLoading(submitButton, false);
+            $("startSessionBtn").disabled = false;
+            renderTimerState();
         }
     });
 
@@ -1958,7 +1983,7 @@ function initStudy() {
         if (!sessionStart) {
 
             $("sessionTimer").textContent =
-                "25:00";
+                "00:00";
         }
     });
 }
