@@ -1900,6 +1900,12 @@ html:not([data-theme="light"]) .stat-icon.blue { background: rgba(37, 99, 235, 0
     margin-bottom: 14px;
 }
 
+.subject-time-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-bottom: 7px;
+}
+
 .progress-track {
 
     flex: 1;

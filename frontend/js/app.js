@@ -1320,11 +1320,11 @@ function renderSubjects() {
         return;
     }
 
-    // Bar = share of total study time (honest relative measure)
-    const maxSeconds =
+    // Bar = share of total recorded study time, not course completion.
+    const totalSeconds =
         Math.max(
             1,
-            ...state.subjects.map((subject) => subjectSeconds(subject.id))
+            state.subjects.reduce((sum, subject) => sum + subjectSeconds(subject.id), 0)
         );
 
     grid.innerHTML =
@@ -1337,7 +1337,7 @@ function renderSubjects() {
                 subjectSeconds(subject.id);
 
             const pct =
-                Math.round((seconds / maxSeconds) * 100);
+                Math.round((seconds / totalSeconds) * 100);
 
             const letter =
                 (subject.name || "?").trim().charAt(0).toUpperCase();
@@ -1362,7 +1362,8 @@ function renderSubjects() {
 
                     </div>
 
-                    <div class="subject-progress">
+                    <p class="subject-time-label">Share of recorded study time</p>
+                    <div class="subject-progress" role="meter" aria-label="Share of recorded study time" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" title="${pct}% of your recorded study time">
 
                         <div class="progress-track">
 
