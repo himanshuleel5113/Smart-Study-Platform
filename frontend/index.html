@@ -15,22 +15,6 @@
 
     <title>Smart Study Platform</title>
 
-    <link
-            rel="preconnect"
-            href="https://fonts.googleapis.com"
-    >
-
-    <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossorigin
-    >
-
-    <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
-    >
-
     <link rel="stylesheet" href="css/style.css">
 
     <link
@@ -827,6 +811,13 @@
 
             <p id="searchStatus" class="search-status hidden" role="status"></p>
 
+            <section id="dataLoadError" class="card data-error hidden" role="alert">
+                <span class="empty-emoji" aria-hidden="true">☁️</span>
+                <h1>Your study data could not be loaded</h1>
+                <p id="dataLoadErrorMessage" class="card-sub"></p>
+                <button id="retryDataButton" class="btn btn-primary" type="button">Try Again</button>
+            </section>
+
             <!-- ============ DASHBOARD ============ -->
 
             <section
@@ -1422,7 +1413,7 @@
 
                     <div
                             id="studyHistoryList"
-                            class="table-wrap"
+                            class="table-wrap" tabindex="0" role="region" aria-label="Scrollable history table"
                     >
                         <div class="empty-state">Loading history...</div>
                     </div>
@@ -2003,7 +1994,7 @@
                 </div>
 
                 <div
-                        
+
                         class="results-cols"
                 >
 
@@ -2030,7 +2021,7 @@
 
                         <div
                                 id="quizAttemptsList"
-                                class="table-wrap"
+                                class="table-wrap" tabindex="0" role="region" aria-label="Scrollable history table"
                         >
                             <div class="empty-state">No attempts yet.</div>
                         </div>

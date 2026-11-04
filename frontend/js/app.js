@@ -280,6 +280,9 @@ async function apiRequest(path, options = {}) {
         throw error;
     }
 
+    // A 204 response has no body, even when the service labels it JSON.
+    if (response.status === 204) return null;
+
     const contentType =
         response.headers.get("content-type");
 
@@ -381,6 +384,9 @@ function getThemePreference() {
 function initTheme() {
 
     applyTheme(getThemePreference());
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (getThemePreference() === "system") applyTheme("system");
+    });
 }
 
 
@@ -464,7 +470,7 @@ function showModal({ title, bodyHTML, okText = "Save", okClass = "btn-primary", 
         else trapFocus(event, root);
     }
     document.addEventListener("keydown", onModalKey);
-    root.querySelector("input:not(:disabled), button")?.focus();
+    root.querySelector("input:not(:disabled), textarea:not(:disabled), button")?.focus();
     return { close };
 }
 
@@ -623,6 +629,9 @@ function showRegisterPage() {
 }
 
 function forceLogout() {
+    closeSidebar();
+    $("userMenu").classList.add("hidden");
+    $("userChip").setAttribute("aria-expanded", "false");
     selectedResultId = null;
     lastAnswerReview = null;
     state.lastResult = null;
@@ -642,6 +651,12 @@ function forceLogout() {
 /* ============================================================
    Core data loading (parallel)
    ============================================================ */
+
+function showDataLoadError(error) {
+    $("appShell").classList.toggle("data-unavailable", Boolean(error));
+    $("dataLoadError").classList.toggle("hidden", !error);
+    $("dataLoadErrorMessage").textContent = error ? error.message : "";
+}
 
 async function loadCoreData() {
 
@@ -698,6 +713,7 @@ async function loadCoreData() {
 
     state.questionCounts =
         Object.fromEntries(counts);
+    showDataLoadError(null);
 
     renderUserChip();
 }
@@ -716,6 +732,7 @@ async function reloadDataSilently() {
 
         } else {
 
+            showDataLoadError(error);
             showToast(error.message, "error");
         }
     }
@@ -783,6 +800,13 @@ function closeSidebar(restoreFocus = false) {
 }
 
 function initShell() {
+    $("retryDataButton").addEventListener("click", async () => {
+        const button = $("retryDataButton");
+        setButtonLoading(button, true);
+        await reloadDataSilently();
+        setButtonLoading(button, false);
+        if (!$("appShell").classList.contains("data-unavailable")) showView(currentView);
+    });
 
     // Sidebar navigation
     document.querySelectorAll(".sidebar-item")
@@ -2931,7 +2955,6 @@ function renderAttempts() {
                     <th>Score</th>
                     <th>Percentage</th>
                     <th>Completed</th>
-                    <th><span class="sr-only">Actions</span></th>
                 </tr>
 
             </thead>
@@ -2950,7 +2973,7 @@ function renderAttempts() {
 
                         <tr>
 
-                            <td style="font-weight:600;">${escapeHtml(quiz ? quiz.title : `Quiz #${attempt.quizId}`)}</td>
+                            <td><button type="button" class="result-link" data-attempt="${attempt.attemptId}" title="View this result">${escapeHtml(quiz ? quiz.title : `Quiz #${attempt.quizId}`)}</button></td>
 
                             <td>${attempt.score} / ${attempt.totalQuestions}</td>
 
@@ -2961,7 +2984,6 @@ function renderAttempts() {
                             </td>
 
                             <td>${escapeHtml(formatDateTime(attempt.completedAt))}</td>
-                            <td><button type="button" class="btn btn-outline" data-attempt="${attempt.attemptId}">View</button></td>
 
                         </tr>
                     `;
@@ -3227,6 +3249,7 @@ function init() {
 
                 } else {
 
+                    showDataLoadError(error);
                     showToast(error.message, "error");
 
                     enterApp();
