@@ -3074,6 +3074,7 @@ function markThemeSelection() {
 
     document.querySelectorAll("#themeOptions .theme-option")
         .forEach((option) => {
+            option.setAttribute("aria-pressed", String(option.dataset.themeChoice === pref));
 
             option.classList.toggle(
                 "selected",
@@ -3103,7 +3104,8 @@ function initSettings() {
 
     $("saveSettingsBtn").addEventListener("click", () => {
 
-        showToast("Settings saved. Appearance updated.", "success");
+        localStorage.setItem("theme", getThemePreference());
+        showToast("Appearance saved on this device.", "success");
     });
 }
 
