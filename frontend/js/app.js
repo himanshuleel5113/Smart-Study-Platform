@@ -385,81 +385,85 @@ function initTheme() {
    Modal helper
    ============================================================ */
 
-function showModal({ title, bodyHTML, okText = "Save", okClass = "btn-primary", onOk }) {
-
-    const root =
-        $("modalRoot");
-
-    if (!root) {
-        return { close: () => {} };
+function trapFocus(event, container) {
+    if (event.key !== "Tab") return;
+    const elements = [...container.querySelectorAll(
+        'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]'
+    )].filter((element) => element.getClientRects().length);
+    const first = elements[0];
+    const last = elements[elements.length - 1];
+    if (!first) return;
+    if (event.shiftKey && (document.activeElement === first || !container.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !container.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
     }
+}
 
+let closeActiveModal = null;
+
+function showModal({ title, bodyHTML, okText = "Save", okClass = "btn-primary", onOk }) {
+    closeActiveModal?.();
+    const root = $("modalRoot");
+    if (!root) return { close: () => {} };
+    const previousFocus = document.activeElement;
     root.innerHTML = `
         <div class="modal-backdrop" data-modal-cancel></div>
-        <div class="modal" role="dialog" aria-modal="true">
-            <h3>${escapeHtml(title)}</h3>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <h3 id="modalTitle">${escapeHtml(title)}</h3>
             <div class="modal-body">${bodyHTML}</div>
             <div class="modal-actions">
                 <button type="button" class="btn btn-outline" data-modal-cancel>Cancel</button>
                 <button type="button" class="btn ${okClass}" data-modal-ok>${escapeHtml(okText)}</button>
             </div>
-        </div>
-    `;
-
+        </div>`;
     root.classList.remove("hidden");
-
-    const close =
-        () => {
-
-            root.classList.add("hidden");
-
-            root.innerHTML = "";
-        };
-
-    root.querySelectorAll("[data-modal-cancel]")
-        .forEach((el) => el.addEventListener("click", close));
-
-    const okButton =
-        root.querySelector("[data-modal-ok]");
-
+    document.body.classList.add("modal-open");
+    $("appShell").inert = true;
+    $("authShell").inert = true;
+    const okButton = root.querySelector("[data-modal-ok]");
+    let saving = false;
+    const close = () => {
+        if (saving) return;
+        document.removeEventListener("keydown", onModalKey);
+        root.classList.add("hidden");
+        root.innerHTML = "";
+        document.body.classList.remove("modal-open");
+        $("appShell").inert = false;
+        $("authShell").inert = false;
+        closeActiveModal = null;
+        if (previousFocus?.isConnected) previousFocus.focus();
+    };
+    closeActiveModal = close;
+    root.querySelectorAll("[data-modal-cancel]").forEach((el) => el.addEventListener("click", close));
     okButton.addEventListener("click", async () => {
-
-        if (!onOk) {
-            close();
-            return;
-        }
-
+        if (saving) return;
+        if (!onOk) { close(); return; }
+        const invalid = root.querySelector(":invalid");
+        if (invalid) { invalid.reportValidity(); return; }
+        saving = true;
         setButtonLoading(okButton, true);
-
         try {
-
             await onOk();
-
+            saving = false;
             close();
-
         } catch (error) {
-
             showToast(error.message, "error");
-
         } finally {
-
+            saving = false;
             setButtonLoading(okButton, false);
         }
     });
-
-    document.addEventListener("keydown", function onEsc(e) {
-
-        if (e.key === "Escape") {
-
-            close();
-
-            document.removeEventListener("keydown", onEsc);
-        }
-    });
-
+    function onModalKey(event) {
+        if (event.key === "Escape") close();
+        else trapFocus(event, root);
+    }
+    document.addEventListener("keydown", onModalKey);
+    root.querySelector("input:not(:disabled), button")?.focus();
     return { close };
 }
-
 
 /* ============================================================
    Router (hash based)
@@ -508,14 +512,14 @@ function showView(name) {
         }
     });
 
-    document.querySelectorAll(".sidebar-item")
-        .forEach((item) => {
-
-            item.classList.toggle(
-                "active",
-                item.dataset.view === name
-            );
-        });
+    document.querySelectorAll(".sidebar-item").forEach((item) => {
+        const active = item.dataset.view === (name === "quiz" ? "quizzes" : name);
+        item.classList.toggle("active", active);
+        if (active) item.setAttribute("aria-current", "page");
+        else item.removeAttribute("aria-current");
+    });
+    const titles = { dashboard: "Dashboard", subjects: "Subjects", study: "Study Sessions", quizzes: "Quizzes", quiz: "Take Quiz", results: "Results", profile: "Profile", settings: "Settings" };
+    document.title = `${titles[name]} ? Smart Study Platform`;
 
     // Per-view refreshers
     if (name === "dashboard") refreshDashboard();
@@ -754,11 +758,14 @@ function renderUserChip() {
         name.trim().charAt(0).toUpperCase() || "S";
 }
 
-function closeSidebar() {
-
+function closeSidebar(restoreFocus = false) {
     $("appShell")?.classList.remove("sidebar-open");
-
     $("sidebarBackdrop")?.classList.add("hidden");
+    document.body.classList.remove("sidebar-visible");
+    document.querySelector(".main-area").inert = false;
+    $("sidebarToggle").setAttribute("aria-expanded", "false");
+    $("sidebar").inert = window.matchMedia("(max-width: 899px)").matches;
+    if (restoreFocus) $("sidebarToggle").focus();
 }
 
 function initShell() {
@@ -776,24 +783,29 @@ function initShell() {
             });
         });
 
-    // Mobile sidebar
+    // Off-canvas navigation keeps keyboard focus inside the open sidebar.
     $("sidebarToggle").addEventListener("click", () => {
-
-        const shell =
-            $("appShell");
-
-        const open =
-            shell.classList.toggle("sidebar-open");
-
-        $("sidebarBackdrop").classList.toggle("hidden", !open);
+        $("appShell").classList.add("sidebar-open");
+        $("sidebarBackdrop").classList.remove("hidden");
+        $("sidebarToggle").setAttribute("aria-expanded", "true");
+        document.body.classList.add("sidebar-visible");
+        document.querySelector(".main-area").inert = true;
+        $("sidebar").inert = false;
+        $("sidebar").querySelector(".active, button").focus();
     });
-
-    $("sidebarBackdrop").addEventListener("click", closeSidebar);
-
-    // Notification bell (no notifications API yet)
-    $("notificationBell").addEventListener("click", () => {
-
-        showToast("Notifications are coming soon.", "info");
+    $("sidebarBackdrop").addEventListener("click", () => closeSidebar(true));
+    window.matchMedia("(max-width: 899px)").addEventListener("change", () => closeSidebar());
+    closeSidebar();
+    document.addEventListener("keydown", (event) => {
+        if ($("appShell").classList.contains("sidebar-open")) {
+            if (event.key === "Escape") closeSidebar(true);
+            else trapFocus(event, $("sidebar"));
+        }
+        if (event.key === "Escape" && !$("userMenu").classList.contains("hidden")) {
+            $("userMenu").classList.add("hidden");
+            $("userChip").setAttribute("aria-expanded", "false");
+            $("userChip").focus();
+        }
     });
 
     // User menu
@@ -831,6 +843,7 @@ function initShell() {
             && !userMenu.contains(event.target)) {
 
             userMenu.classList.add("hidden");
+        $("userChip").setAttribute("aria-expanded", "false");
         }
     });
 
@@ -840,6 +853,7 @@ function initShell() {
             item.addEventListener("click", () => {
 
                 userMenu.classList.add("hidden");
+        $("userChip").setAttribute("aria-expanded", "false");
 
                 window.location.hash =
                     `#${item.dataset.view}`;
@@ -851,6 +865,7 @@ function initShell() {
     $("menuLogoutButton").addEventListener("click", () => {
 
         userMenu.classList.add("hidden");
+        $("userChip").setAttribute("aria-expanded", "false");
 
         forceLogout();
     });

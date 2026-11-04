@@ -178,6 +178,28 @@ button {
     display: none !important;
 }
 
+/* Shared accessibility and content sizing */
+.skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 500;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    background: var(--surface);
+    transform: translateY(-150%);
+}
+.skip-link:focus { transform: translateY(0); }
+body.modal-open, body.sidebar-visible { overflow: hidden; }
+.card, .view, .subject-card, .quiz-row, .page-head-left,
+.subject-top > div, .activity-item > div, .stat-card > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+button:disabled { cursor: not-allowed; }
+.bell-btn:disabled { opacity: .65; }
+
 /* ---------------- Buttons ---------------- */
 
 .btn {
@@ -605,6 +627,8 @@ textarea.input {
     padding: 24px;
 
     animation: modal-in 0.2s ease;
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
 }
 
 @keyframes modal-in {
@@ -3239,7 +3263,7 @@ html[data-theme="dark"] .quiz-topbar-card {
     }
 }
 
-@media (max-width: 940px) {
+@media (max-width: 899px) {
 
     .sidebar {
 
