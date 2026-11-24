@@ -1,9 +1,8 @@
 package com.smartstudy.quizservice.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-//import tools.jackson.databind.ObjectMapper;
 import com.openai.client.OpenAIClient;
-import com.openai.models.ChatModel;
 import com.openai.models.responses.ResponseCreateParams;
 import com.smartstudy.quizservice.dto.AiQuizGenerateRequest;
 import com.smartstudy.quizservice.dto.AiQuizGenerateResponse;
@@ -13,10 +12,18 @@ import com.smartstudy.quizservice.model.Quiz;
 import com.smartstudy.quizservice.repository.QuestionRepository;
 import com.smartstudy.quizservice.repository.QuizRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AiQuizService {
@@ -25,6 +32,18 @@ public class AiQuizService {
     private final ObjectMapper objectMapper;
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
+    @Value("${ai.deployment:gpt-4.1-mini}")
+    private String deployment = "gpt-4.1-mini";
+
+    @Value("${gemini.api.key:}")
+    private String geminiApiKey;
+
+    @Value("${gemini.model:gemini-2.5-flash}")
+    private String geminiModel = "gemini-2.5-flash";
 
     public AiQuizService(
             OpenAIClient openAIClient,
@@ -44,24 +63,44 @@ public class AiQuizService {
             AiQuizGenerateRequest request
     ) {
         String prompt = buildPrompt(request);
+        String aiText;
 
-        ResponseCreateParams params = ResponseCreateParams.builder()
-                .input(prompt)
-                .model("gpt-4.1-mini")
-                .build();
+        String activeGeminiKey = (geminiApiKey != null && !geminiApiKey.isBlank())
+                ? geminiApiKey
+                : System.getenv("GEMINI_API_KEY");
 
-        var response = openAIClient.responses().create(params);
+        if (activeGeminiKey != null && !activeGeminiKey.isBlank() && !"dummy-key-for-local-dev".equalsIgnoreCase(activeGeminiKey.trim())) {
+            aiText = callGemini(prompt, activeGeminiKey.trim());
+        } else {
+            ResponseCreateParams params = ResponseCreateParams.builder()
+                    .input(prompt)
+                    .model(deployment)
+                    .build();
 
-        String aiText = extractText(response);
+            var response = openAIClient.responses().create(params);
+            aiText = extractText(response);
+        }
 
         AiQuizData quizData = parseResponse(aiText);
 
-        if (quizData.title == null || quizData.title.isBlank()) {
+        if (quizData == null || quizData.title == null || quizData.title.isBlank()) {
             throw new IllegalStateException("AI returned an invalid quiz title");
         }
 
         if (quizData.questions == null || quizData.questions.isEmpty()) {
             throw new IllegalStateException("AI did not generate any questions");
+        }
+
+        if (quizData.questions.size() != request.getNumberOfQuestions()) {
+            throw new IllegalStateException("AI returned the wrong number of questions. Please try again.");
+        }
+        // Validate the entire response before persisting a quiz or any questions.
+        for (AiQuestionData question : quizData.questions) {
+            if (question == null || isBlank(question.questionText) || isBlank(question.optionA)
+                    || isBlank(question.optionB) || isBlank(question.optionC) || isBlank(question.optionD)) {
+                throw new IllegalStateException("AI returned an incomplete question. Please try again.");
+            }
+            question.correctAnswer = normalizeCorrectAnswer(question.correctAnswer);
         }
 
         Quiz quiz = new Quiz(
@@ -107,6 +146,63 @@ public class AiQuizService {
         );
     }
 
+    private String callGemini(String prompt, String apiKey) {
+        String model = (geminiModel != null && !geminiModel.isBlank()) ? geminiModel : "gemini-3.5-flash-lite";
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+
+        try {
+            Map<String, Object> part = Map.of("text", prompt);
+            Map<String, Object> content = Map.of("parts", List.of(part));
+            Map<String, Object> genConfig = Map.of(
+                    "temperature", 0.7,
+                    "responseMimeType", "application/json"
+            );
+            Map<String, Object> requestBody = Map.of(
+                    "contents", List.of(content),
+                    "generationConfig", genConfig
+            );
+
+            String requestJson = objectMapper.writeValueAsString(requestBody);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(60))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestJson, StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                String errorMsg = "Gemini API request failed with status " + response.statusCode();
+                try {
+                    JsonNode errorNode = objectMapper.readTree(response.body());
+                    if (errorNode.has("error") && errorNode.get("error").has("message")) {
+                        errorMsg = "Gemini API: " + errorNode.get("error").get("message").asText();
+                    }
+                } catch (Exception ignored) {
+                }
+                throw new IllegalStateException(errorMsg);
+            }
+
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode candidates = root.path("candidates");
+            if (candidates.isArray() && !candidates.isEmpty()) {
+                JsonNode parts = candidates.get(0).path("content").path("parts");
+                if (parts.isArray() && !parts.isEmpty()) {
+                    String rawText = parts.get(0).path("text").asText();
+                    return cleanJson(rawText);
+                }
+            }
+
+            throw new IllegalStateException("Gemini returned an empty candidate list or missing text.");
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to communicate with Gemini API: " + e.getMessage(), e);
+        }
+    }
+
     private String buildPrompt(AiQuizGenerateRequest request) {
 
         return """
@@ -149,6 +245,10 @@ public class AiQuizService {
                 request.getDifficulty(),
                 request.getNumberOfQuestions()
         );
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private String extractText(

@@ -71,6 +71,12 @@ services:
     depends_on:
       user-postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "3", "http://localhost:8081/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     networks:
       - smart-study
 
@@ -88,6 +94,12 @@ services:
     depends_on:
       study-postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "3", "http://localhost:8082/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     networks:
       - smart-study
 
@@ -101,12 +113,21 @@ services:
       DB_URL: jdbc:postgresql://quiz-postgres:5432/quiz_db
       DB_USERNAME: postgres
       DB_PASSWORD: ${QUIZ_DB_PASSWORD:-postgres}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY:-dummy-key-for-local-dev}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://studyplanneragent-resource.openai.azure.com/openai/v1}
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
     depends_on:
       quiz-postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "3", "http://localhost:8083/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     networks:
       - smart-study
 
@@ -125,9 +146,18 @@ services:
       JWT_SECRET: ${JWT_SECRET:-MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=}
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
     depends_on:
-      - user-service
-      - study-service
-      - quiz-service
+      user-service:
+        condition: service_healthy
+      study-service:
+        condition: service_healthy
+      quiz-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "3", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     networks:
       - smart-study
 
@@ -141,46 +171,38 @@ services:
       - "80:80"
       - "30000:80"
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-T", "3", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - smart-study
 
-  prometheus:
-    image: prom/prometheus:v3.5.0
+  nagios:
+    image: jasonrivers/nagios:latest
     restart: unless-stopped
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=2d
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
     ports:
-      - "9090:9090"
-    networks:
-      - smart-study
-
-  grafana:
-    image: grafana/grafana:12.1.0
-    restart: unless-stopped
+      - "8090:80"
     environment:
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-      GF_ANALYTICS_REPORTING_ENABLED: "false"
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
+      NAGIOSADMIN_USER: ${NAGIOSADMIN_USER:-nagiosadmin}
+      NAGIOSADMIN_PASS: ${NAGIOSADMIN_PASS:-nagios}
+      NAGIOS_TIMEZONE: ${NAGIOS_TIMEZONE:-UTC}
     volumes:
-      - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana-provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana-dashboards:/var/lib/grafana/dashboards:ro
+      - ./monitoring/nagios/conf.d:/opt/nagios/etc/conf.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f -u $${NAGIOSADMIN_USER:-nagiosadmin}:$${NAGIOSADMIN_PASS:-nagios} http://127.0.0.1/nagios/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - smart-study
 
 volumes:
-  prometheus-data:
-  grafana-data:
   user-postgres-data:
   study-postgres-data:
   quiz-postgres-data:

@@ -70,6 +70,13 @@ spec:
             - name: JAVA_TOOL_OPTIONS
               value: "-Duser.timezone=UTC"
 
+            - name: OPENAI_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: smart-study-config
+                  key: OPENAI_MODEL
+                  optional: true
+
           resources:
             requests:
               cpu: "100m"

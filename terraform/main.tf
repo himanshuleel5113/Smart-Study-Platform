@@ -22,7 +22,7 @@ variable "aws_region" {
 variable "instance_type" {
   description = "EC2 instance type for the Smart Study Platform"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.micro"
 }
 
 data "aws_caller_identity" "current" {}
@@ -38,13 +38,24 @@ data "aws_subnets" "default" {
   }
 
   filter {
-    name   = "state"
-    values = ["available"]
+    name   = "availability-zone"
+    values = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c", "${var.aws_region}d"]
   }
 }
 
-data "aws_ssm_parameter" "al2023_ami" {
-  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+data "aws_ami" "al2023_ami" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-2023.*-kernel-6.1-x86_64"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
 }
 
 locals {
@@ -138,6 +149,14 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "Nagios Core monitoring dashboard"
+    from_port   = 8090
+    to_port     = 8090
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     description = "Allow outbound connections for package and image downloads"
     from_port   = 0
@@ -153,7 +172,7 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_instance" "app" {
-  ami                         = data.aws_ssm_parameter.al2023_ami.value
+  ami                         = data.aws_ami.al2023_ami.id
   instance_type               = var.instance_type
   subnet_id                   = data.aws_subnets.default.ids[0]
   vpc_security_group_ids      = [aws_security_group.app.id]
@@ -175,6 +194,13 @@ resource "aws_instance" "app" {
   user_data = <<-EOF
     #!/bin/bash
     set -euxo pipefail
+
+    # Configure 2GB swap space for JVM microservices on micro instance
+    fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
     dnf install -y docker
     systemctl enable --now docker
@@ -216,6 +242,11 @@ output "public_ip" {
 output "application_url" {
   description = "HTTP URL of the application"
   value       = "http://${aws_eip.app.public_ip}"
+}
+
+output "nagios_url" {
+  description = "Nagios Core monitoring dashboard"
+  value       = "http://${aws_eip.app.public_ip}:8090/nagios/"
 }
 
 output "s3_bucket_name" {

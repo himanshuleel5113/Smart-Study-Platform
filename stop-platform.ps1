@@ -1,18 +1,30 @@
-# Smart Study Platform - Stop All Services
-Write-Host "Stopping Smart Study Platform..." -ForegroundColor Yellow
+# Stop only this project's Compose containers. Keep containers and data volumes.
+[CmdletBinding()]
+param()
 
-# Kill running java jar processes
-Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*smart-study*" -or $_.CommandLine -like "*user-service*" -or $_.CommandLine -like "*study-service*" -or $_.CommandLine -like "*quiz-service*" -or $_.CommandLine -like "*api-gateway*" } | ForEach-Object {
-    Write-Host "Stopping process PID $($_.ProcessId)..."
-    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+$ErrorActionPreference = 'Stop'
+$composeArgs = @(
+    'compose', '--project-name', 'smart-study-platform-main',
+    '--project-directory', $PSScriptRoot,
+    '--file', (Join-Path $PSScriptRoot 'docker-compose.yml')
+)
+$envFile = Join-Path $PSScriptRoot '.env'
+if (Test-Path -LiteralPath $envFile) {
+    $composeArgs += @('--env-file', $envFile)
 }
 
-# Stop frontend server (serve)
-Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*serve frontend*" } | ForEach-Object {
-    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+try {
+    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+        throw 'Docker is not installed or is not on PATH.'
+    }
+    Write-Host 'Stopping Smart Study Platform containers...' -ForegroundColor Yellow
+    & docker @composeArgs stop --timeout 30
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker Compose stop failed (exit $LASTEXITCODE). Check that Docker Desktop is running."
+    }
+    Write-Host 'Smart Study Platform stopped. Containers and database volumes are preserved.' -ForegroundColor Green
+    exit 0
+} catch {
+    Write-Error $_ -ErrorAction Continue
+    exit 1
 }
-
-# Stop database containers
-docker compose stop user-postgres study-postgres quiz-postgres
-
-Write-Host "All Smart Study Platform services have been stopped." -ForegroundColor Green

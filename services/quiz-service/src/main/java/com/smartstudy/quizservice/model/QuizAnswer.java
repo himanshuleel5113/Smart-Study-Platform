@@ -1,6 +1,7 @@
 package com.smartstudy.quizservice.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,6 +23,37 @@ public class QuizAnswer {
 
     // Stores the option selected by the student: A, B, C, or D.
     private String selectedAnswer;
+
+    // Snapshot the marked answers so reviews survive deletion of the source quiz.
+    @Column(columnDefinition = "text")
+    private String questionText;
+    @Column(columnDefinition = "text")
+    private String selectedOptionText;
+    private String correctAnswer;
+    @Column(columnDefinition = "text")
+    private String correctOptionText;
+
+    public void snapshot(Question question) {
+        questionText = question.getQuestionText();
+        correctAnswer = question.getCorrectAnswer();
+        selectedOptionText = optionText(question, selectedAnswer);
+        correctOptionText = optionText(question, correctAnswer);
+    }
+
+    private String optionText(Question question, String answer) {
+        return switch (answer) {
+            case "A" -> question.getOptionA();
+            case "B" -> question.getOptionB();
+            case "C" -> question.getOptionC();
+            case "D" -> question.getOptionD();
+            default -> null;
+        };
+    }
+
+    public String getQuestionText() { return questionText; }
+    public String getSelectedOptionText() { return selectedOptionText; }
+    public String getCorrectAnswer() { return correctAnswer; }
+    public String getCorrectOptionText() { return correctOptionText; }
 
     public QuizAnswer() {
     }

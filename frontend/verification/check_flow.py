@@ -10,6 +10,8 @@ from http.server import ThreadingHTTPServer
 from playwright.sync_api import sync_playwright, expect
 from check_ui import ROOT, ARTIFACTS, QuietHandler
 
+expect.set_options(timeout=15000)
+
 
 def navigate(page, view):
     page.evaluate("view => { location.hash = view; }", view)
@@ -150,7 +152,8 @@ def results(page):
     expect(page.locator("#resultTotal")).to_have_text("2")
     page.reload(wait_until="domcontentloaded")
     expect(page.locator("#view-results")).to_be_visible(timeout=15000)
-    expect(page.locator("#answerReviewList")).to_contain_text("Saved answer details are coming soon")
+    expect(page.locator("#answerReviewList")).to_contain_text("Correct answer:")
+    expect(page.locator("#answerReviewList")).to_contain_text("CSS")
 
 
 def profile_settings(page):
@@ -164,9 +167,37 @@ def profile_settings(page):
     page.keyboard.press("Escape")
     navigate(page, "settings")
     expect(page.locator("#settingsName")).to_have_value("UI Verification")
-    expect(page.locator("#settingsName")).to_be_disabled()
-    expect(page.locator("#settingsCurrentPassword")).to_be_disabled()
-    assert page.locator('.toggle input:disabled').count() == 3
+    expect(page.locator("#settingsName")).to_be_enabled()
+    expect(page.locator("#settingsCurrentPassword")).to_be_enabled()
+    page.locator("#settingsName").fill("UI Verification Updated")
+    with page.expect_response(lambda r: "/api/users/profile" in r.url and r.request.method == "PUT") as saved:
+        page.locator("#saveProfileBtn").click()
+    assert saved.value.ok
+    page.reload(wait_until="domcontentloaded")
+    expect(page.locator("#settingsName")).to_have_value("UI Verification Updated")
+    page.locator("#settingsName").fill("UI Verification")
+    with page.expect_response(lambda r: "/api/users/profile" in r.url and r.request.method == "PUT"):
+        page.locator("#saveProfileBtn").click()
+    account = json.loads((ARTIFACTS / "test-account.json").read_text())
+    changed_password = account["password"] + "-changed"
+    page.locator("#settingsCurrentPassword").fill(account["password"])
+    page.locator("#settingsNewPassword").fill(changed_password)
+    with page.expect_response(lambda r: "/api/users/password" in r.url) as changed:
+        page.locator("#changePasswordBtn").click()
+    assert changed.value.status == 204
+    expect(page.locator("#settingsNewPassword")).to_have_value("")
+    login = page.request.post(os.environ.get("SSP_BASE_URL", "http://localhost:8080") + "/api/users/login",
+        data={"email": account["email"], "password": changed_password})
+    assert login.ok
+    # Restore this isolated account's password for the lifecycle verification.
+    page.locator("#settingsCurrentPassword").fill(changed_password)
+    page.locator("#settingsNewPassword").fill(account["password"])
+    with page.expect_response(lambda r: "/api/users/password" in r.url) as restored:
+        page.locator("#changePasswordBtn").click()
+    assert restored.value.status == 204
+    expect(page.locator("#settingsStudyGoal")).to_be_visible()
+    page.locator("#settingsStudyGoal").select_option("45")
+    page.locator("#savePreferencesBtn").click()
     page.locator('[data-theme-choice="dark"]').click()
     expect(page.locator("html")).to_have_attribute("data-theme", "dark")
     page.locator("#saveSettingsBtn").click()

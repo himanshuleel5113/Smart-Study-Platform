@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +16,7 @@
 
     <title>Smart Study Platform</title>
 
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20261111">
 
     <link
             rel="icon"
@@ -1517,7 +1518,7 @@
 
                         <h3>✨ Generate AI Quiz
 
-                            <span class="badge badge-ai" style="vertical-align:middle;">Powered by AI</span>
+                            <span class="badge badge-ai" style="vertical-align:middle;background:linear-gradient(135deg,#4285f4,#9b51e0);color:#fff;font-weight:600;padding:3px 10px;border-radius:12px;font-size:11px;">Powered by Gemini AI</span>
 
                         </h3>
 
@@ -1662,6 +1663,14 @@
                                 data-filter="ai"
                         >
                             AI Generated
+                        </button>
+
+                        <button
+                                type="button"
+                                class="chip"
+                                data-filter="completed"
+                        >
+                            Completed
                         </button>
 
                     </div>
@@ -2238,7 +2247,12 @@
 
                 <div class="wave-banner" style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
 
-                    <span class="page-icon" style="background:var(--primary);color:#fff;">⚙️</span>
+                    <span class="page-icon" style="background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </span>
 
                     <div>
 
@@ -2256,41 +2270,62 @@
 
                         <div class="card">
 
-                            <h3>👤 Account Settings</h3>
+                            <h3 style="display:flex;align-items:center;gap:8px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" style="color:var(--primary);" aria-hidden="true">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Account Settings
+                            </h3>
 
                             <p class="card-sub">Your account details.</p>
 
-                            <div style="display:grid;gap:13px;">
+                            <form id="accountProfileForm" autocomplete="off" onsubmit="event.preventDefault();">
 
-                                <div>
+                                <div style="display:grid;gap:13px;">
 
-                                    <label for="settingsName">Name</label>
+                                    <div>
 
-                                    <input
-                                            id="settingsName"
-                                            class="input"
-                                            type="text"
-                                            disabled
-                                    >
+                                        <label for="settingsName">Name</label>
+
+                                        <input
+                                                id="settingsName"
+                                                class="input"
+                                                type="text"
+                                                maxlength="255"
+                                                autocomplete="name"
+                                                required
+                                        >
+
+                                    </div>
+
+                                    <div>
+
+                                        <label for="settingsEmail">Email</label>
+
+                                        <input
+                                                id="settingsEmail"
+                                                class="input"
+                                                type="email"
+                                                disabled
+                                        >
+
+                                        <p class="card-sub" style="margin-top:8px;">Your sign-in email cannot be changed here.</p>
+
+                                    </div>
 
                                 </div>
 
-                                <div>
+                                <button
+                                        id="saveProfileBtn"
+                                        type="submit"
+                                        class="btn btn-primary"
+                                        style="margin-top:16px;"
+                                >
+                                    Save Profile
+                                </button>
 
-                                    <label for="settingsEmail">Email</label>
-
-                                    <input
-                                            id="settingsEmail"
-                                            class="input"
-                                            type="email"
-                                            disabled
-                                    >
-
-                                    <span class="badge badge-soon" style="margin-top:8px;">Profile updates - coming soon</span>
-
-                                </div>
-
-                            </div>
+                            </form>
 
                         </div>
 
@@ -2299,44 +2334,70 @@
                                 style="margin-top:18px;"
                         >
 
-                            <h3>🔒 Change Password</h3>
+                            <h3 style="display:flex;align-items:center;gap:8px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" style="color:var(--primary);" aria-hidden="true">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                Change Password
+                            </h3>
 
                             <p class="card-sub">
-                                Password changes are coming soon.
-                                <span class="badge badge-soon">Coming soon</span>
+                                Confirm your current password to choose a new one with at least 8 characters.
                             </p>
 
-                            <div style="display:grid;gap:13px;">
+                            <form id="changePasswordForm" autocomplete="off" onsubmit="event.preventDefault();">
 
-                                <div>
+                                <!-- Hidden trap inputs to prevent browser autofill heuristics from populating current/new password -->
+                                <input type="text" name="fakeusernameremembered" style="display:none !important;" aria-hidden="true" tabindex="-1" autocomplete="off">
+                                <input type="password" name="fakepasswordremembered" style="display:none !important;" aria-hidden="true" tabindex="-1" autocomplete="new-password">
 
-                                    <label for="settingsCurrentPassword">Current Password</label>
+                                <div style="display:grid;gap:13px;">
 
-                                    <input
-                                            id="settingsCurrentPassword"
-                                            class="input"
-                                            type="password"
-                                            placeholder="••••••••"
-                                            disabled
-                                    >
+                                    <div>
+
+                                        <label for="settingsCurrentPassword">Current Password</label>
+
+                                        <input
+                                                id="settingsCurrentPassword"
+                                                class="input"
+                                                type="password"
+                                                placeholder="Enter current password"
+                                                autocomplete="new-password"
+                                                required
+                                        >
+
+                                    </div>
+
+                                    <div>
+
+                                        <label for="settingsNewPassword">New Password</label>
+
+                                        <input
+                                                id="settingsNewPassword"
+                                                class="input"
+                                                type="password"
+                                                placeholder="Enter new password (min. 8 characters)"
+                                                autocomplete="new-password"
+                                                minlength="8"
+                                                maxlength="72"
+                                                required
+                                        >
+
+                                    </div>
 
                                 </div>
 
-                                <div>
+                                <button
+                                        id="changePasswordBtn"
+                                        type="submit"
+                                        class="btn btn-primary"
+                                        style="margin-top:16px;"
+                                >
+                                    Change Password
+                                </button>
 
-                                    <label for="settingsNewPassword">New Password</label>
-
-                                    <input
-                                            id="settingsNewPassword"
-                                            class="input"
-                                            type="password"
-                                            placeholder="••••••••"
-                                            disabled
-                                    >
-
-                                </div>
-
-                            </div>
+                            </form>
 
                         </div>
 
@@ -2346,81 +2407,74 @@
 
                         <div class="card">
 
-                            <h3>🔔 Notifications</h3>
+                            <h3 style="display:flex;align-items:center;gap:8px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" style="color:var(--primary);" aria-hidden="true">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                                Study & Notification Preferences
+                            </h3>
 
                             <p class="card-sub">
-                                Reminders and summaries are coming soon.
-                                <span class="badge badge-soon">Coming soon</span>
+                                Customize your study cadence, alerts, and performance summaries.
                             </p>
 
-                            <div class="settings-row">
+                            <form id="preferencesForm" autocomplete="off" onsubmit="event.preventDefault();" style="display:grid;gap:13px;">
 
-                                <div class="sr-label">
-
-                                    <strong>Quiz reminders</strong>
-
-                                    <span>Get reminded to take a quiz</span>
-
+                                <div>
+                                    <label for="settingsStudyGoal">Daily Study Goal</label>
+                                    <select id="settingsStudyGoal" class="input">
+                                        <option value="15">15 minutes / day (Casual)</option>
+                                        <option value="30" selected>30 minutes / day (Regular)</option>
+                                        <option value="45">45 minutes / day (Standard)</option>
+                                        <option value="60">1 hour / day (Dedicated)</option>
+                                        <option value="120">2 hours / day (Intensive)</option>
+                                    </select>
                                 </div>
 
-                                <label class="toggle">
-
-                                    <input
-                                            type="checkbox" aria-label="Quiz reminders - coming soon"
-                                            disabled
-                                    >
-
-                                    <span class="track"></span>
-
-                                </label>
-
-                            </div>
-
-                            <div class="settings-row">
-
-                                <div class="sr-label">
-
-                                    <strong>Study streaks</strong>
-
-                                    <span>Encouragement when you hit a streak</span>
-
+                                <div>
+                                    <label for="settingsQuizReminderFreq">Quiz Reminder Frequency</label>
+                                    <select id="settingsQuizReminderFreq" class="input">
+                                        <option value="daily" selected>Daily reminder (Recommended)</option>
+                                        <option value="weekdays">Weekdays only (Mon – Fri)</option>
+                                        <option value="weekly">Weekly digest (Sundays)</option>
+                                        <option value="off">Mute reminders</option>
+                                    </select>
                                 </div>
 
-                                <label class="toggle">
-
-                                    <input
-                                            type="checkbox" aria-label="Study streaks - coming soon"
-                                            disabled
-                                    >
-
-                                    <span class="track"></span>
-
-                                </label>
-
-                            </div>
-
-                            <div class="settings-row">
-
-                                <div class="sr-label">
-
-                                    <strong>Score summaries</strong>
-
-                                    <span>A summary after each quiz</span>
-
+                                <div>
+                                    <label for="settingsScoreSummary">Score & Results Summaries</label>
+                                    <select id="settingsScoreSummary" class="input">
+                                        <option value="always" selected>Instant full analysis after quiz submission</option>
+                                        <option value="summary_only">Score overview badge only</option>
+                                        <option value="minimal">Minimal (quiet mode)</option>
+                                    </select>
                                 </div>
 
-                                <label class="toggle">
+                                <div>
+                                    <label for="settingsStreakAlert">Milestone & Streak Alerts</label>
+                                    <select id="settingsStreakAlert" class="input">
+                                        <option value="enabled" selected>Encouragement toasts on streak milestones</option>
+                                        <option value="disabled">Silent (no toasts)</option>
+                                    </select>
+                                </div>
 
-                                    <input
-                                            type="checkbox" aria-label="Score summaries - coming soon"
-                                            disabled
+                                <div style="margin-top:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                                    <span style="font-size:12.5px;color:var(--text-muted);display:inline-flex;align-items:center;gap:6px;">
+                                        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" style="color:var(--success,#10b981);"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                        Preferences auto-sync
+                                    </span>
+                                    <button
+                                            id="savePreferencesBtn"
+                                            type="button"
+                                            class="btn btn-primary"
+                                            style="padding:8px 18px;font-size:13px;"
                                     >
+                                        Save Preferences
+                                    </button>
+                                </div>
 
-                                    <span class="track"></span>
-
-                                </label>
-
-                            </div>
+                            </form>
 
                         </div>
 
@@ -2429,7 +2483,16 @@
                                 style="margin-top:18px;"
                         >
 
-                            <h3>🎨 Appearance</h3>
+                            <h3 style="display:flex;align-items:center;gap:8px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" style="color:var(--primary);" aria-hidden="true">
+                                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+                                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+                                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+                                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"></path>
+                                </svg>
+                                Appearance
+                            </h3>
 
                             <p class="card-sub">Choose a theme for this device. Your preference is saved automatically.</p>
 
@@ -2478,17 +2541,20 @@
 
                             </div>
 
-                        </div>
-
-                        <div class="settings-save">
-
-                            <button
-                                    id="saveSettingsBtn"
-                                    type="button"
-                                    class="btn btn-primary"
-                            >
-                                Save Appearance
-                            </button>
+                            <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                                <span style="font-size:12.5px;color:var(--text-muted);display:inline-flex;align-items:center;gap:6px;">
+                                    <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" style="color:var(--success,#10b981);"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    Preferences apply automatically
+                                </span>
+                                <button
+                                        id="saveSettingsBtn"
+                                        type="button"
+                                        class="btn btn-primary"
+                                        style="padding:8px 18px;font-size:13px;"
+                                >
+                                    Save Appearance
+                                </button>
+                            </div>
 
                         </div>
 
@@ -2505,7 +2571,7 @@
 </div>
 
 
-<script src="js/app.js"></script>
+<script src="js/app.js?v=20261112d"></script>
 
 </body>
 </html>

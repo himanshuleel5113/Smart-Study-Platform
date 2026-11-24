@@ -12,6 +12,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidInput(IllegalArgumentException exception) {
+        return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<Map<String, String>> handleDuplicateEmail(
             DuplicateEmailException exception) {
@@ -43,6 +48,8 @@ public class GlobalExceptionHandler {
                 .forEach(error ->
                         response.put(error.getField(), error.getDefaultMessage())
                 );
+        response.put("message", exception.getBindingResult().getFieldErrors().stream()
+                .findFirst().map(error -> error.getDefaultMessage()).orElse("Invalid request"));
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }

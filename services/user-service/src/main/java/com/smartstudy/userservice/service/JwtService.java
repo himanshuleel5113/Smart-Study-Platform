@@ -56,6 +56,23 @@ public class JwtService {
         return claims.getSubject();
     }
 
+    public Long extractUserId(String token) {
+
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        Object userId = claims.get("userId");
+
+        if (userId instanceof Number number) {
+            return number.longValue();
+        }
+
+        return Long.parseLong(String.valueOf(userId));
+    }
+
     public boolean isTokenValid(String token) {
 
         try {

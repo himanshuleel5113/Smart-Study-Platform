@@ -7,6 +7,7 @@ import com.smartstudy.studyservice.model.Subject;
 import com.smartstudy.studyservice.repository.StudySessionRepository;
 import com.smartstudy.studyservice.repository.SubjectRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,21 +18,26 @@ public class StudySessionService {
 
     private final StudySessionRepository studySessionRepository;
     private final SubjectRepository subjectRepository;
+    private final StudySessionLock sessionLock;
 
     public StudySessionService(
             StudySessionRepository studySessionRepository,
-            SubjectRepository subjectRepository) {
+            SubjectRepository subjectRepository, StudySessionLock sessionLock) {
 
         this.studySessionRepository = studySessionRepository;
         this.subjectRepository = subjectRepository;
+        this.sessionLock = sessionLock;
     }
 
+    @Transactional
     public StudySessionResponse startSession(
             Long userId,
             StudySessionRequest request) {
 
+        sessionLock.acquire(userId);
+
         // A student can have only one running timer at a time.
-        if (studySessionRepository.findByUserIdAndEndedAtIsNull(userId).isPresent()) {
+        if (studySessionRepository.findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(userId).isPresent()) {
             throw new IllegalStateException(
                     "A study session is already running"
             );
@@ -60,10 +66,13 @@ public class StudySessionService {
         return toResponse(savedSession);
     }
 
+    @Transactional
     public StudySessionResponse stopSession(Long userId) {
 
+        sessionLock.acquire(userId);
+
         StudySession session =
-                studySessionRepository.findByUserIdAndEndedAtIsNull(userId)
+                studySessionRepository.findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(userId)
                         .orElseThrow(() ->
                                 new IllegalStateException(
                                         "No active study session found"

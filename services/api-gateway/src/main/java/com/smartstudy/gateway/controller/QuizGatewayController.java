@@ -14,6 +14,12 @@ import org.springframework.web.client.RestTemplate;
 @RestController
 public class QuizGatewayController {
 
+    @GetMapping("/api/quiz-attempts/{attemptId}/answers")
+    public ResponseEntity<String> getAttemptReview(HttpServletRequest request, @PathVariable Long attemptId) {
+        return forwardGet("/api/quiz-attempts/" + attemptId + "/answers?userId="
+                + getAuthenticatedUserId(request), request);
+    }
+
     private final RestTemplate restTemplate;
     private final String quizServiceUrl;
 

@@ -1,6 +1,7 @@
 package com.smartstudy.quizservice.controller;
 
 import com.smartstudy.quizservice.dto.QuizAttemptResponse;
+import com.smartstudy.quizservice.dto.QuizAttemptReviewResponse;
 import com.smartstudy.quizservice.service.QuizAttemptService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,5 +35,11 @@ public class QuizAttemptController {
         return ResponseEntity.ok(
                 quizAttemptService.getQuizAttempts(userId, quizId)
         );
+    }
+
+    @GetMapping("/{attemptId}/answers")
+    public ResponseEntity<QuizAttemptReviewResponse> getReview(
+            @RequestParam Long userId, @PathVariable Long attemptId) {
+        return ResponseEntity.ok(quizAttemptService.getReview(userId, attemptId));
     }
 }

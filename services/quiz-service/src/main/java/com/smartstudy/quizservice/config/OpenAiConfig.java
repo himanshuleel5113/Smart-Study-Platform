@@ -42,20 +42,18 @@ public class OpenAiConfig {
         String baseUrl = System.getenv("OPENAI_BASE_URL");
 
         if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException(
-                    "AZURE_OPENAI_KEY environment variable is missing"
-            );
+            apiKey = "placeholder-key-for-gemini-mode";
         }
 
         if (baseUrl == null || baseUrl.isBlank()) {
-            throw new IllegalStateException(
-                    "OPENAI_BASE_URL environment variable is missing"
-            );
+            baseUrl = "https://placeholder-resource.openai.azure.com/openai/v1";
         }
 
         return OpenAIOkHttpClient.builder()
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)
+                .timeout(java.time.Duration.ofSeconds(60))
+                .maxRetries(0)
                 .build();
     }
 }

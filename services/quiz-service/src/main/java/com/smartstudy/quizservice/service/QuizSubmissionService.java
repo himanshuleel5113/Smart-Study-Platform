@@ -1,6 +1,7 @@
 package com.smartstudy.quizservice.service;
 
 import com.smartstudy.quizservice.dto.QuizResultResponse;
+import com.smartstudy.quizservice.exception.QuizConflictException;
 import com.smartstudy.quizservice.dto.QuizSubmissionRequest;
 import com.smartstudy.quizservice.model.Question;
 import com.smartstudy.quizservice.model.QuizAttempt;
@@ -55,7 +56,7 @@ public class QuizSubmissionService {
                 questionRepository.findByQuizId(quizId);
 
         if (questions.isEmpty()) {
-            throw new IllegalStateException(
+            throw new QuizConflictException(
                     "Quiz does not contain any questions"
             );
         }
@@ -129,6 +130,7 @@ public class QuizSubmissionService {
                     answer.getQuestionId(),
                     answer.getSelectedAnswer().toUpperCase()
             );
+            quizAnswer.snapshot(questionsById.get(answer.getQuestionId()));
 
             quizAnswerRepository.save(quizAnswer);
         }

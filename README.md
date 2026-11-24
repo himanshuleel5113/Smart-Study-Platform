@@ -1,8 +1,9 @@
 # Smart Study Platform
 
+Current completion status, fixes, and remaining work: [Project review — 11 November 2026](PROJECT_REVIEW.md).
+
 A cloud-native study management web application built with a microservices architecture. The project combines a web interface, Spring Boot services, PostgreSQL databases, containerized deployment, Kubernetes orchestration, CI/CD automation, and application monitoring.
 
-**Repository:** https://github.com/Dineshjatch/smart-study-platform
 
 **Project report title:** *Smart Study Platform*
 
@@ -10,7 +11,7 @@ A cloud-native study management web application built with a microservices archi
 
 The Smart Study Platform helps users organize study activities and monitor their progress. Users can manage subjects, record study sessions, review study history, take quizzes, and view quiz scores and attempt history. The Quiz Service also integrates with Azure OpenAI for AI-assisted quiz functionality.
 
-The project demonstrates a practical DevOps workflow: containerizing application components, deploying them in a local Kubernetes cluster and on AWS EC2, automating delivery through Jenkins, and monitoring services with Prometheus and Grafana.
+The project demonstrates a practical DevOps workflow: containerizing application components, deploying them in a local Kubernetes cluster and on AWS EC2, automating delivery through Jenkins, and monitoring services with Nagios Core.
 
 ## Features
 
@@ -18,12 +19,12 @@ The project demonstrates a practical DevOps workflow: containerizing application
 - Subject management and study-session tracking.
 - Study history and statistics.
 - Quiz management, answer submission, score calculation, and attempt history.
-- Azure OpenAI integration for AI-assisted quiz functionality.
+- Google Gemini AI / Azure OpenAI integration for AI-assisted quiz functionality.
 - Separate PostgreSQL databases for user, study, and quiz data.
 - Docker-based packaging and Docker Compose deployment.
 - Kubernetes Deployments, Services, configuration resources, persistent-volume claims, and Horizontal Pod Autoscalers.
 - Jenkins pipeline for backend testing, Docker image build/publish, and deployment.
-- Prometheus metrics collection and Grafana dashboards.
+- Nagios Core service and host health monitoring.
 - k6-based load testing for authenticated API Gateway requests.
 - Terraform configuration for AWS infrastructure resources.
 
@@ -55,7 +56,7 @@ The project demonstrates a practical DevOps workflow: containerizing application
                  └───────────┘ └─────────┘ └─────────┘
 
        Jenkins ──> Test/Build/Deploy
-       Prometheus ──> Metrics collection ──> Grafana dashboards
+       Nagios Core ──> Service & Infrastructure Health Monitoring
        Kubernetes HPA ──> API Gateway replica scaling
 ```
 
@@ -69,14 +70,14 @@ The diagram summarizes the core runtime path. The exact deployment layout and ac
 | Backend | Java 21, Spring Boot |
 | API entry point | Spring Boot API Gateway |
 | Database | PostgreSQL 17 |
-| AI integration | Azure OpenAI |
+| AI integration | Google Gemini API / Azure OpenAI |
 | Containers | Docker, Docker Compose |
 | Orchestration | Kubernetes (Docker Desktop) |
 | Autoscaling | Kubernetes Horizontal Pod Autoscaler (HPA) |
 | CI/CD | Jenkins, GitHub |
 | Cloud | AWS EC2, EBS, S3, IAM, Systems Manager (SSM) |
 | Infrastructure as Code | Terraform |
-| Monitoring | Prometheus, Grafana, cAdvisor, Node Exporter |
+| Monitoring | Nagios Core |
 | Load testing | k6 |
 
 ## Main Services and Ports
@@ -129,6 +130,39 @@ Azure OpenAI functionality requires valid endpoint/deployment configuration and 
 
 ## HOW TO RUN — Docker Compose (local)
 
+On Windows, use the project scripts from PowerShell (the launcher starts Docker Desktop if needed):
+
+```powershell
+.\start-platform.ps1 -Build  # first run or after code changes: tests, packages, builds, starts
+.\stop-platform.ps1          # stops this project's containers; retains all database volumes
+.\start-platform.ps1         # subsequent starts using the existing local images
+```
+
+`run.bat` (also accepts `-Build`) and `stop.bat` run these same scripts. They resolve
+paths relative to the scripts, so they also work when launched from another directory.
+The scripts use `docker-compose.yml`, the root `.env`, and the Compose project name
+`smart-study-platform-main` to reuse this project's existing containers and volumes.
+They do not overwrite credentials or stop host processes. Normal Compose environment
+precedence applies: existing shell variables override `.env` values.
+
+Startup waits for Docker, the databases, all four backend health endpoints, the frontend,
+and Nagios Core before reporting success.
+`-WaitTimeoutSeconds 300` controls each of the engine, container, and HTTP readiness
+phases (each defaults to five minutes). Every Compose service has a recurring health
+check, and the gateway/frontend wait for healthy dependencies during Compose startup.
+Use `docker compose ps` to inspect current health. All services use `restart: unless-stopped`
+to recover after process exits and Docker engine restarts; explicitly stopped containers
+need `run.bat` to start again. Docker reports failed health checks as `unhealthy`, but
+does not restart a still-running process solely because a health check fails.
+Local monitoring uses `monitoring/prometheus.local.yml`; the AWS configuration also
+scrapes cAdvisor and Node Exporter, which are not part of the local Compose stack.
+Failures return a nonzero exit code; services already started are retained for diagnosis.
+The UI is at **http://localhost**; port 8090 is Nagios Core. AI generation remains
+unavailable with the current placeholder credentials; it is not needed for startup
+or the manual quiz flows. No AI request is made by these scripts.
+
+The equivalent manual workflow follows.
+
 Prerequisites: Git, Docker Desktop (with Docker Compose), JDK 21 + Maven (only to build the jars), and a `.env` file in the repository root (copy from the variables below; never commit the real file).
 
 1. Build the service jars (the Dockerfiles copy them from `target/`):
@@ -137,17 +171,23 @@ Prerequisites: Git, Docker Desktop (with Docker Compose), JDK 21 + Maven (only t
    mvn clean package -DskipTests
    ```
 
-2. Make sure these variables exist in `.env` (see `.env.example` values in each service folder; use placeholders locally):
+2. Copy the root `.env.example` to `.env` if you do not already have one, and configure these variables:
 
    ```text
    DOCKERHUB_USER, IMAGE_TAG
    USER_DB_PASSWORD, STUDY_DB_PASSWORD, QUIZ_DB_PASSWORD
    JWT_SECRET (Base64-encoded, >= 256 bits)
-   AZURE_OPENAI_KEY, OPENAI_BASE_URL
-   GRAFANA_ADMIN_PASSWORD (Grafana admin user password)
+   AZURE_OPENAI_KEY, OPENAI_BASE_URL, OPENAI_MODEL
+   NAGIOSADMIN_USER, NAGIOSADMIN_PASS (Nagios admin credentials)
    ```
 
    Quiz Service refuses to start without `AZURE_OPENAI_KEY`/`OPENAI_BASE_URL` — a placeholder value such as `dummy-key-for-local-dev` is enough to boot; only real AI generation needs a real key.
+
+   `OPENAI_MODEL` is the exact Azure deployment name (defaults to `gpt-4.1-mini`).
+   `OPENAI_BASE_URL` must use your resource's v1 endpoint, for example
+   `https://your-resource-name.openai.azure.com/openai/v1/`.
+   The deployment must support the Responses API. After editing `.env`, recreate
+   the quiz service with `docker compose up -d --force-recreate quiz-service`.
 
 3. Build and start the stack:
 
@@ -162,9 +202,8 @@ Prerequisites: Git, Docker Desktop (with Docker Compose), JDK 21 + Maven (only t
    | URL | What |
    |---|---|
    | http://localhost | Frontend (Nginx, proxies `/api/` to the gateway) |
-   | http://localhost:8080/actuator/prometheus | API Gateway metrics |
-   | http://localhost:9090 | Prometheus |
-   | http://localhost:3000 | Grafana (admin / `$GRAFANA_ADMIN_PASSWORD`) |
+   | http://localhost:8080/actuator/health | API Gateway Health |
+   | http://localhost:8090/nagios/ | Nagios Core (nagiosadmin / `$NAGIOSADMIN_PASS`) |
 
 5. End-to-end test (register → login → subject → session → quiz):
 
@@ -320,19 +359,19 @@ The API Gateway HPA is configured with a minimum of two and a maximum of four re
 
 The AWS environment runs the application on an Amazon EC2 instance using Docker Compose. The deployment configuration is maintained separately from the local Kubernetes deployment. On the instance, the deployment directory used by the project is `/opt/smart-study`, with the AWS Compose configuration and `.env.aws` file.
 
-The web application has been accessed at `http://34.206.7.102` in the recorded deployment. Availability of this address depends on the EC2 instance and its network configuration being active.
+The web application is live at `http://34.235.91.177`. Nagios Core monitoring is accessible at `http://34.235.91.177:8090/nagios/` (credentials: `nagiosadmin` / `nagios`). Availability depends on the EC2 instance and its network configuration being active.
 
-For administration, the project uses AWS Systems Manager Session Manager where configured. Monitoring ports should remain private; do not expose Grafana or Prometheus publicly just to access the dashboards. The `.env.aws` file contains deployment secrets and must not be shared or committed.
+For administration, the project uses AWS Systems Manager Session Manager where configured. Monitoring ports should remain private; do not expose Nagios publicly just to access the web console. The `.env.aws` file contains deployment secrets and must not be shared or committed.
 
 ## CI/CD and Monitoring
 
 The Jenkins pipeline includes stages for source checkout, backend tests, Docker image build/publish, Kubernetes deployment, AWS EC2 deployment, and post-build actions. The exact stage execution result should be checked in the relevant Jenkins build.
 
-Prometheus is configured to collect metrics from the backend services and infrastructure exporters. Grafana presents selected metrics such as JVM heap memory, service availability, HTTP request rate, and HTTP response/error panels. A healthy Prometheus target confirms that the target is scrapeable; it does not alone prove that every application workflow succeeds.
+Nagios Core is configured to monitor all backend microservices, database connections, and the frontend web UI using active service and TCP health checks. Nagios provides real-time status dashboards, alerting states (OK, WARNING, CRITICAL), and uptime tracking across the entire microservice architecture.
 
 ## Testing and Known Results
 
-The captured API Gateway Maven run recorded **21 tests with zero failures and zero errors**. A recorded Quiz Service run reported **39 tests with zero failures and zero errors**. A full-tree run (`mvn clean test`) records **95 tests across the four modules** (user 9, study 26, quiz 39, gateway 21), all passing.
+The 7 November 2026 full-tree Maven run (`mvn -B -ntp test`) recorded **99 tests across the four modules** (user 9, study 26, quiz 43, gateway 21), with zero failures, errors, or skipped tests. Packaging, Docker startup/shutdown, data persistence, and real browser flows also passed. See [the local verification report](verification/README.md) for results and repeatable commands.
 
 The k6 load test was re-run after health probes were added to the Deployments (startup + readiness + liveness on `/actuator/health/*`, plus unauthenticated `/actuator/health` exposure in the gateway). Comparison against the previously recorded run:
 
@@ -350,7 +389,7 @@ The check totals differ because the runs were executed in different environments
 
 - Keep `.env`, `.env.aws`, credentials, API keys, database passwords, and JWT secrets out of version control.
 - Store only placeholder values in example configuration files.
-- Keep Prometheus and Grafana behind private access controls or secure port forwarding.
+- Keep Nagios Core behind private access controls or secure port forwarding.
 - Review AWS security-group rules before deployment.
 - Avoid including account identifiers, tokens, passwords, or other sensitive information in screenshots and public documentation.
 

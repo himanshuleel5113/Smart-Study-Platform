@@ -224,7 +224,8 @@ async function apiRequest(path, options = {}) {
     const {
         method = "GET",
         body = null,
-        includeAuth = true
+        includeAuth = true,
+        timeoutMs = 45000
     } = options;
 
     const headers = {};
@@ -247,9 +248,13 @@ async function apiRequest(path, options = {}) {
         }
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     const fetchOptions = {
         method: method,
-        headers: headers
+        headers: headers,
+        signal: controller.signal
     };
 
     if (body !== null) {
@@ -270,6 +275,14 @@ async function apiRequest(path, options = {}) {
 
     } catch (networkError) {
 
+        clearTimeout(timeoutId);
+
+        if (networkError.name === 'AbortError') {
+            const timeoutError = new Error("Request timed out. Please try again.");
+            timeoutError.status = 504;
+            throw timeoutError;
+        }
+
         const error =
             new Error(
                 "Cannot reach the server. Please check that the services are running and try again."
@@ -278,6 +291,8 @@ async function apiRequest(path, options = {}) {
         error.status = 0;
 
         throw error;
+    } finally {
+        clearTimeout(timeoutId);
     }
 
     // A 204 response has no body, even when the service labels it JSON.
@@ -304,6 +319,13 @@ async function apiRequest(path, options = {}) {
     }
 
     if (!response.ok) {
+
+        if (response.status === 401 && includeAuth) {
+            forceLogout();
+            const sessionError = new Error("Your session has expired. Please log in again.");
+            sessionError.status = 401;
+            throw sessionError;
+        }
 
         const errorMessage =
             data &&
@@ -348,6 +370,7 @@ let timerInterval = null;
 let quizSubmitting = false;
 let selectedResultId = null;
 let lastAnswerReview = null;
+let answerReviewRequest = 0;
 
 
 /* ============================================================
@@ -634,7 +657,10 @@ function forceLogout() {
     $("userChip").setAttribute("aria-expanded", "false");
     selectedResultId = null;
     lastAnswerReview = null;
+    answerReviewRequest++;
     state.lastResult = null;
+    $("settingsCurrentPassword").value = "";
+    $("settingsNewPassword").value = "";
 
     localStorage.removeItem("token");
 
@@ -670,8 +696,8 @@ async function loadCoreData() {
         return;
     }
 
-    const [profile, stats, subjects, history, quizzes, attempts] =
-        await Promise.all([
+    const [profileRes, statsRes, subjectsRes, historyRes, quizzesRes, attemptsRes] =
+        await Promise.allSettled([
 
             apiRequest("/api/users/profile"),
 
@@ -686,17 +712,35 @@ async function loadCoreData() {
             apiRequest("/api/quiz-attempts")
         ]);
 
-    state.profile = profile;
+    if (profileRes.status === "rejected") {
+        if (profileRes.reason && profileRes.reason.status === 401) {
+            forceLogout();
+            return;
+        }
+        throw profileRes.reason;
+    }
 
-    state.stats = stats;
+    state.profile = profileRes.value;
 
-    state.subjects = Array.isArray(subjects) ? subjects : [];
+    state.stats = statsRes.status === "fulfilled"
+        ? statsRes.value
+        : { totalStudySeconds: 0, totalSessions: 0, averageSessionSeconds: 0 };
 
-    state.history = Array.isArray(history) ? history : [];
+    state.subjects = (subjectsRes.status === "fulfilled" && Array.isArray(subjectsRes.value))
+        ? subjectsRes.value
+        : [];
 
-    state.quizzes = Array.isArray(quizzes) ? quizzes : [];
+    state.history = (historyRes.status === "fulfilled" && Array.isArray(historyRes.value))
+        ? historyRes.value
+        : [];
 
-    state.attempts = Array.isArray(attempts) ? attempts : [];
+    state.quizzes = (quizzesRes.status === "fulfilled" && Array.isArray(quizzesRes.value))
+        ? quizzesRes.value
+        : [];
+
+    state.attempts = (attemptsRes.status === "fulfilled" && Array.isArray(attemptsRes.value))
+        ? attemptsRes.value
+        : [];
 
     // Question counts per quiz (honest "N questions" badges)
     const counts =
@@ -2057,13 +2101,17 @@ function renderQuizzes() {
                 return quiz.aiGenerated;
             }
 
+            if (quizFilter === "completed") {
+                return Array.isArray(state.attempts) && state.attempts.some((a) => a.quizId === quiz.id);
+            }
+
             return true;
         });
 
     if (visible.length === 0) {
 
         container.innerHTML =
-            '<div class="empty-state">No quizzes match this filter.</div>';
+            `<div class="empty-state">${quizFilter === "completed" ? "No completed quizzes yet - attempt a quiz to see it here." : "No quizzes match this filter."}</div>`;
 
         return;
     }
@@ -2081,6 +2129,17 @@ function renderQuizzes() {
 
             const letter =
                 (quiz.title || "?").trim().charAt(0).toUpperCase();
+
+            const userAttempts = Array.isArray(state.attempts)
+                ? state.attempts.filter((a) => a.quizId === quiz.id)
+                : [];
+
+            const latestAttempt = userAttempts.length > 0
+                ? [...userAttempts].sort((a, b) => (new Date(b.completedAt) - new Date(a.completedAt)) || (b.attemptId - a.attemptId))[0]
+                : null;
+
+            const isCompleted = !!latestAttempt;
+            const completedScore = isCompleted ? Math.round(latestAttempt.percentage || 0) : null;
 
             return `
 
@@ -2104,8 +2163,16 @@ function renderQuizzes() {
                             ? '<span class="badge badge-ai">✨ AI Generated</span>'
                             : '<span class="badge badge-manual">✍️ Manual</span>'}
 
+                        ${isCompleted
+                            ? `<span class="badge badge-complete" title="Completed score: ${completedScore}%">✓ Completed (${completedScore}%)</span>`
+                            : ""}
+
                         ${!quiz.aiGenerated ? `<button type="button" class="btn btn-outline" data-add-question="${quiz.id}">+ Add Questions</button>` : ""}
-                        <button type="button" class="btn btn-primary" data-take="${quiz.id}" ${count === 0 ? 'disabled title="Add questions before taking this quiz"' : ""}>Take Quiz ▶</button>
+
+                        ${isCompleted
+                            ? `<button type="button" class="btn btn-primary" data-view-result="${latestAttempt.attemptId}">View Result 📊</button>
+                               <button type="button" class="btn btn-outline" data-take="${quiz.id}" ${count === 0 ? 'disabled title="Add questions before retaking this quiz"' : ""}>Retake ↻</button>`
+                            : `<button type="button" class="btn btn-primary" data-take="${quiz.id}" ${count === 0 ? 'disabled title="Add questions before taking this quiz"' : ""}>Take Quiz ▶</button>`}
 
                     </div>
 
@@ -2117,6 +2184,14 @@ function renderQuizzes() {
         button.addEventListener("click", () => openQuestionEditor(Number(button.dataset.addQuestion)));
     });
     applySearchFilter();
+
+    container.querySelectorAll("[data-view-result]").forEach((button) => {
+        button.addEventListener("click", () => {
+            selectedResultId = Number(button.dataset.viewResult);
+            window.location.hash = "#results";
+            showView("results");
+        });
+    });
 
     container.querySelectorAll("[data-take]")
         .forEach((button) => {
@@ -2609,10 +2684,7 @@ function submitQuizSession() {
 
         .then(async (result) => {
             selectedResultId = null;
-            lastAnswerReview = {
-                attemptId: result.attemptId,
-                questions: questions.map((question) => ({ ...question, selectedAnswer: quizSession.answers[question.id] }))
-            };
+            lastAnswerReview = null;
 
             state.lastResult =
                 result;
@@ -2728,19 +2800,41 @@ function initQuizTaking() {
    Results
    ============================================================ */
 
-function renderAnswerReview() {
+async function renderAnswerReview() {
     const container = $("answerReviewList");
     const displayedId = selectedResultId || state.lastResult?.attemptId || state.attempts[0]?.attemptId;
-    if (!lastAnswerReview || lastAnswerReview.attemptId !== displayedId) {
-        container.innerHTML = '<p class="card-sub">Saved answer details are coming soon. Your scores remain available in Attempt History.</p>';
+    const requestId = ++answerReviewRequest;
+    if (!displayedId) {
+        container.innerHTML = '<p class="card-sub">Complete a quiz to review your answers.</p>';
         return;
     }
-    container.innerHTML = '<p class="card-sub">Your selections from this visit. Correct-answer feedback is coming soon.</p>' +
-        lastAnswerReview.questions.map((question, index) => `
+    if (!lastAnswerReview || lastAnswerReview.attemptId !== displayedId) {
+        container.innerHTML = '<p class="card-sub" role="status">Loading saved answers...</p>';
+        try {
+            const review = await apiRequest(`/api/quiz-attempts/${displayedId}/answers`);
+            if (requestId !== answerReviewRequest) return;
+            lastAnswerReview = review;
+        } catch (error) {
+            if (requestId !== answerReviewRequest) return;
+            container.innerHTML = `<p class="card-sub" role="alert">${escapeHtml(error.message)}</p>
+                <button type="button" class="btn btn-outline" id="retryAnswerReview">Retry answer review</button>`;
+            $("retryAnswerReview").addEventListener("click", renderAnswerReview);
+            return;
+        }
+    }
+    if (!lastAnswerReview.answers.length) {
+        container.innerHTML = '<p class="card-sub">No saved answer details are available for this attempt.</p>';
+        return;
+    }
+    container.innerHTML = '<p class="card-sub">Saved answers and correct-answer feedback for this attempt.</p>' +
+        lastAnswerReview.answers.map((question, index) => `
             <article class="answer-review">
-                <h3>${index + 1}. ${escapeHtml(question.questionText)}</h3>
+                <h3>${index + 1}. ${escapeHtml(question.questionText || "Question no longer available")}</h3>
                 <p><span class="badge badge-ai">Your answer</span> ${escapeHtml(question.selectedAnswer)}.
-                    ${escapeHtml(question[`option${question.selectedAnswer}`])}</p>
+                    ${escapeHtml(question.selectedOptionText || "")}</p>
+                ${question.correctAnswer ? `<p><span class="badge ${question.correct ? "badge-complete" : "badge-incorrect"}">${question.correct ? "Correct" : "Incorrect"}</span>
+                    Correct answer: ${escapeHtml(question.correctAnswer)}. ${escapeHtml(question.correctOptionText)}</p>` :
+                    '<p class="card-sub">This older question was deleted before answer snapshots were available.</p>'}
             </article>
         `).join("");
 }
@@ -3074,6 +3168,43 @@ function initProfile() {
    Settings
    ============================================================ */
 
+function clearPasswordInputs() {
+    const current = $("settingsCurrentPassword");
+    const next = $("settingsNewPassword");
+    if (current) current.value = "";
+    if (next) next.value = "";
+    setTimeout(() => {
+        if (current) current.value = "";
+        if (next) next.value = "";
+    }, 50);
+    setTimeout(() => {
+        if (current) current.value = "";
+        if (next) next.value = "";
+    }, 250);
+}
+
+
+const defaultPreferences = {
+    studyGoal: "30",
+    quizReminderFreq: "daily",
+    scoreSummary: "always",
+    streakAlert: "enabled"
+};
+
+function getPreferences() {
+    try {
+        const stored = localStorage.getItem("ssp_preferences");
+        return stored ? { ...defaultPreferences, ...JSON.parse(stored) } : defaultPreferences;
+    } catch {
+        return defaultPreferences;
+    }
+}
+
+function savePreferences(prefs) {
+    localStorage.setItem("ssp_preferences", JSON.stringify(prefs));
+}
+
+
 function renderSettings() {
 
     if (state.profile) {
@@ -3085,6 +3216,13 @@ function renderSettings() {
             state.profile.email || "";
     }
 
+    const prefs = getPreferences();
+    if ($("settingsStudyGoal")) $("settingsStudyGoal").value = prefs.studyGoal;
+    if ($("settingsQuizReminderFreq")) $("settingsQuizReminderFreq").value = prefs.quizReminderFreq;
+    if ($("settingsScoreSummary")) $("settingsScoreSummary").value = prefs.scoreSummary;
+    if ($("settingsStreakAlert")) $("settingsStreakAlert").value = prefs.streakAlert;
+
+    clearPasswordInputs();
     markThemeSelection();
 }
 
@@ -3108,6 +3246,67 @@ function markThemeSelection() {
 
 function initSettings() {
 
+    clearPasswordInputs();
+
+    const saveProfile = $("saveProfileBtn") || document.createElement("button");
+    if (!saveProfile.parentElement) {
+        saveProfile.id = "saveProfileBtn";
+        saveProfile.type = "submit";
+        saveProfile.className = "btn btn-primary";
+        saveProfile.style.marginTop = "16px";
+        saveProfile.textContent = "Save Profile";
+        $("settingsName").closest(".card").append(saveProfile);
+    }
+    saveProfile.addEventListener("click", async (event) => {
+        if (event) event.preventDefault();
+        const name = $("settingsName").value.trim();
+        if (!name || !$("settingsName").reportValidity()) {
+            showToast("Enter your name before saving.", "error");
+            return;
+        }
+        setButtonLoading(saveProfile, true);
+        try {
+            state.profile = await apiRequest("/api/users/profile", { method: "PUT", body: { name } });
+            renderUserChip();
+            refreshProfile();
+            $("settingsName").value = state.profile.name;
+            showToast("Profile saved.", "success");
+        } catch (error) {
+            showToast(error.message, "error");
+        } finally {
+            setButtonLoading(saveProfile, false);
+        }
+    });
+
+    const changePassword = $("changePasswordBtn") || document.createElement("button");
+    if (!changePassword.parentElement) {
+        changePassword.id = "changePasswordBtn";
+        changePassword.type = "submit";
+        changePassword.className = "btn btn-primary";
+        changePassword.style.marginTop = "16px";
+        changePassword.textContent = "Change Password";
+        $("settingsNewPassword").closest(".card").append(changePassword);
+    }
+    changePassword.addEventListener("click", async (event) => {
+        if (event) event.preventDefault();
+        const current = $("settingsCurrentPassword");
+        const next = $("settingsNewPassword");
+        if (!current.reportValidity() || !next.reportValidity()) return;
+        setButtonLoading(changePassword, true);
+        try {
+            await apiRequest("/api/users/password", { method: "POST", body: {
+                currentPassword: current.value, newPassword: next.value
+            } });
+            current.value = "";
+            next.value = "";
+            showToast("Password changed. Use your new password next time you sign in.", "success");
+        } catch (error) {
+            showToast(error.message, "error");
+        } finally {
+            setButtonLoading(changePassword, false);
+        }
+    });
+
     document.querySelectorAll("#themeOptions .theme-option")
         .forEach((option) => {
 
@@ -3124,10 +3323,42 @@ function initSettings() {
             });
         });
 
-    $("saveSettingsBtn").addEventListener("click", () => {
+    const saveSettings = $("saveSettingsBtn");
+    if (saveSettings) {
+        saveSettings.addEventListener("click", () => {
+            localStorage.setItem("theme", getThemePreference());
+            showToast("Appearance saved on this device.", "success");
+        });
+    }
 
-        localStorage.setItem("theme", getThemePreference());
-        showToast("Appearance saved on this device.", "success");
+    const savePrefsBtn = $("savePreferencesBtn");
+    if (savePrefsBtn) {
+        savePrefsBtn.addEventListener("click", () => {
+            const prefs = {
+                studyGoal: $("settingsStudyGoal")?.value || "30",
+                quizReminderFreq: $("settingsQuizReminderFreq")?.value || "daily",
+                scoreSummary: $("settingsScoreSummary")?.value || "always",
+                streakAlert: $("settingsStreakAlert")?.value || "enabled"
+            };
+            savePreferences(prefs);
+            showToast("Study & notification preferences saved.", "success");
+        });
+    }
+
+    ["settingsStudyGoal", "settingsQuizReminderFreq", "settingsScoreSummary", "settingsStreakAlert"].forEach((id) => {
+        const el = $(id);
+        if (el) {
+            el.addEventListener("change", () => {
+                const prefs = {
+                    studyGoal: $("settingsStudyGoal")?.value || "30",
+                    quizReminderFreq: $("settingsQuizReminderFreq")?.value || "daily",
+                    scoreSummary: $("settingsScoreSummary")?.value || "always",
+                    streakAlert: $("settingsStreakAlert")?.value || "enabled"
+                };
+                savePreferences(prefs);
+                showToast("Preference updated.", "success");
+            });
+        }
     });
 }
 

@@ -65,6 +65,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -78,6 +80,13 @@ public class User {
     private String email;
 
     private String password;
+
+    // When the account was created (null for users registered before
+    // this column existed; their registration date is unknown).
+    private Instant createdAt;
+
+    // The last time this account logged in successfully.
+    private Instant lastLoginAt;
 
     public User() {
     }
@@ -114,5 +123,21 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(Instant lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
     }
 }

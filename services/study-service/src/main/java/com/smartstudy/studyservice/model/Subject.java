@@ -1,6 +1,7 @@
 package com.smartstudy.studyservice.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,8 +19,10 @@ public class Subject {
     // It is not a database foreign key because user-service owns the user database.
     private Long userId;
 
+    @Column(columnDefinition = "text")
     private String name;
 
+    @Column(columnDefinition = "text")
     private String description;
 
     public Subject() {

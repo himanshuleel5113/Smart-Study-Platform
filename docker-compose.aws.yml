@@ -66,6 +66,12 @@ services:
       user-postgres:
         condition: service_healthy
     mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health || curl -sf http://localhost:8081/actuator/prometheus || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     networks:
       - smart-study
 
@@ -81,6 +87,12 @@ services:
       study-postgres:
         condition: service_healthy
     mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health || curl -sf http://localhost:8082/actuator/prometheus || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     networks:
       - smart-study
 
@@ -92,12 +104,19 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: ${QUIZ_DB_PASSWORD:?Set QUIZ_DB_PASSWORD in .env.aws}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY:?Set AZURE_OPENAI_KEY in .env.aws}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://studyplanneragent-resource.openai.azure.com/openai/v1}
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
     depends_on:
       quiz-postgres:
         condition: service_healthy
     mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/actuator/health || curl -sf http://localhost:8083/actuator/prometheus || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     networks:
       - smart-study
 
@@ -111,10 +130,19 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env.aws}
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
     depends_on:
-      - user-service
-      - study-service
-      - quiz-service
+      user-service:
+        condition: service_healthy
+      study-service:
+        condition: service_healthy
+      quiz-service:
+        condition: service_healthy
     mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health || curl -sf http://localhost:8080/actuator/prometheus || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
     networks:
       - smart-study
 
@@ -123,89 +151,44 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-    depends_on:
-      - api-gateway
-    mem_limit: 128m
-    networks:
-      - smart-study
-
-  prometheus:
-    image: prom/prometheus:v3.5.0
-    restart: unless-stopped
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=2d
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
-    mem_limit: 384m
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-T", "3", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks:
       - smart-study
 
-  grafana:
-    image: grafana/grafana:12.1.0
+  nagios:
+    image: jasonrivers/nagios:latest
     restart: unless-stopped
-    environment:
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env.aws}
-      GF_ANALYTICS_REPORTING_ENABLED: "false"
-      GF_SMTP_ENABLED: "true"
-      GF_SMTP_HOST: ${GRAFANA_SMTP_HOST:-smtp.gmail.com:587}
-      GF_SMTP_USER: ${GRAFANA_SMTP_USER:?Set GRAFANA_SMTP_USER in .env.aws}
-      GF_SMTP_PASSWORD: ${GRAFANA_SMTP_PASSWORD:?Set GRAFANA_SMTP_PASSWORD in .env.aws}
-      GF_SMTP_FROM_ADDRESS: ${GRAFANA_SMTP_FROM_ADDRESS:?Set GRAFANA_SMTP_FROM_ADDRESS in .env.aws}
-      GF_SMTP_FROM_NAME: "Smart Study Platform Grafana"
-      GF_SMTP_STARTTLS_POLICY: "MandatoryStartTLS"
-      GF_SMTP_SKIP_VERIFY: "false"
     ports:
-      - "127.0.0.1:3000:3000"
-    depends_on:
-      - prometheus
+      - "8090:80"
+    environment:
+      NAGIOSADMIN_USER: ${NAGIOSADMIN_USER:-nagiosadmin}
+      NAGIOSADMIN_PASS: ${NAGIOSADMIN_PASS:?Set NAGIOSADMIN_PASS in .env.aws}
+      NAGIOS_TIMEZONE: ${NAGIOS_TIMEZONE:-UTC}
     volumes:
-      - grafana-data:/var/lib/grafana
+      - ./monitoring/nagios/conf.d:/opt/nagios/etc/conf.d:ro
     mem_limit: 384m
-    networks:
-      - smart-study
-
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.52.1
-    restart: unless-stopped
-    privileged: true
-    command:
-      - --docker_only=true
-      - --housekeeping_interval=30s
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    devices:
-      - /dev/kmsg:/dev/kmsg
-    mem_limit: 128m
-    networks:
-      - smart-study
-
-  node-exporter:
-    image: quay.io/prometheus/node-exporter:v1.9.1
-    restart: unless-stopped
-    pid: host
-    command:
-      - --path.procfs=/host/proc
-      - --path.sysfs=/host/sys
-      - --path.rootfs=/rootfs
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    mem_limit: 64m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f -u $${NAGIOSADMIN_USER:-nagiosadmin}:$${NAGIOSADMIN_PASS} http://127.0.0.1/nagios/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - smart-study
 
 volumes:
-  prometheus-data:
-  grafana-data:
   user-postgres-data:
   study-postgres-data:
   quiz-postgres-data:

@@ -7,9 +7,25 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class JwtAuthenticationFilterTest {
+
+    @Test
+    void downstreamExceptionIsNotMisreportedAsInvalidJwt() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/api/quizzes");
+        request.addHeader("Authorization", "Bearer valid");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+        when(jwtService.isTokenValid("valid")).thenReturn(true);
+        when(jwtService.extractUserId("valid")).thenReturn(1L);
+        doThrow(new jakarta.servlet.ServletException("upstream failure")).when(chain).doFilter(request, response);
+        assertThrows(jakarta.servlet.ServletException.class, () -> filter.doFilter(request, response, chain));
+        assertEquals(200, response.getStatus());
+        assertEquals("", response.getContentAsString());
+    }
 
     private final JwtService jwtService =
             mock(JwtService.class);

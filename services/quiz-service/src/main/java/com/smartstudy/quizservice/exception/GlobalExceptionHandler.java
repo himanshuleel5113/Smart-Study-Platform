@@ -14,6 +14,18 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Map<String, String>> handleMalformedRequest(Exception exception) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "The request contains missing or invalid data.");
+    }
+
+    @ExceptionHandler(QuizConflictException.class)
+    public ResponseEntity<Map<String, String>> handleQuizConflict(QuizConflictException exception) {
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
     // The Azure OpenAI credentials are missing or rejected. The service is
     // correctly configured but the AI provider refuses the request, so this
     // is reported as "service unavailable" rather than a client mistake.

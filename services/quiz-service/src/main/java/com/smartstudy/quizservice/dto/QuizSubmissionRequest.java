@@ -14,8 +14,9 @@ public class QuizSubmissionRequest {
     private Long quizId;
 
     @Size(min = 1, message = "At least one answer is required")
+    @NotNull(message = "Answers are required")
     @Valid
-    private List<AnswerSubmission> answers = new ArrayList<>();
+    private List<@NotNull(message = "An answer must not be null") AnswerSubmission> answers = new ArrayList<>();
 
     public QuizSubmissionRequest() {
     }

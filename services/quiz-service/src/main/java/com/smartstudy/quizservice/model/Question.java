@@ -1,6 +1,7 @@
 package com.smartstudy.quizservice.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,14 +19,19 @@ public class Question {
     // We keep it as an ID instead of a JPA relationship so the model stays simple.
     private Long quizId;
 
+    @Column(columnDefinition = "text")
     private String questionText;
 
+    @Column(columnDefinition = "text")
     private String optionA;
 
+    @Column(columnDefinition = "text")
     private String optionB;
 
+    @Column(columnDefinition = "text")
     private String optionC;
 
+    @Column(columnDefinition = "text")
     private String optionD;
 
     // Stores which option is correct: A, B, C, or D.

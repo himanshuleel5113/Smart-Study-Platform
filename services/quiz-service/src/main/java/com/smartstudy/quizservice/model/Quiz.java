@@ -1,6 +1,7 @@
 package com.smartstudy.quizservice.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,8 +20,10 @@ public class Quiz {
     // Identifies the student who owns this quiz.
     private Long userId;
 
+    @Column(columnDefinition = "text")
     private String title;
 
+    @Column(columnDefinition = "text")
     private String description;
 
     // True when the quiz was generated using OpenAI.

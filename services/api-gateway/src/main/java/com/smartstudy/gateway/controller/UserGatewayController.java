@@ -81,6 +81,25 @@ public class UserGatewayController {
         return executePost(path, requestEntity);
     }
 
+    @PutMapping("/profile")
+    public ResponseEntity<String> updateProfile(HttpServletRequest request, @RequestBody String body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(HttpHeaders.AUTHORIZATION, request.getHeader(HttpHeaders.AUTHORIZATION));
+        try {
+            return buildJsonResponse(restTemplate.exchange(userServiceUrl + "/api/users/profile",
+                    HttpMethod.PUT, new HttpEntity<>(body, headers), String.class));
+        } catch (RestClientResponseException e) {
+            return ResponseEntity.status(e.getStatusCode()).contentType(MediaType.APPLICATION_JSON)
+                    .body(e.getResponseBodyAsString());
+        }
+    }
+
+    @PostMapping("/password")
+    public ResponseEntity<String> changePassword(HttpServletRequest request, @RequestBody String body) {
+        return forwardPost("/api/users/password", body, request.getHeader(HttpHeaders.AUTHORIZATION));
+    }
+
     private ResponseEntity<String> forwardGet(
             String path,
             String authorizationHeader

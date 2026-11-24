@@ -13,5 +13,5 @@ public interface StudySessionRepository
 
     Optional<StudySession> findByIdAndUserId(Long id, Long userId);
 
-    Optional<StudySession> findByUserIdAndEndedAtIsNull(Long userId);
+    Optional<StudySession> findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(Long userId);
 }

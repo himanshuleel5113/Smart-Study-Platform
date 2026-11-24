@@ -63,7 +63,7 @@ html {
     --border-strong: #ddd8f8;
 
     --text: #211d4e;
-    --text-muted: #6f6a90;
+    --text-muted: #544f78;
 
     --primary: #4f46e5;
     --primary-hover: #4338ca;
@@ -2398,6 +2398,8 @@ html[data-theme="dark"] .timer-mode {
     border: none;
 
     text-align: center;
+    background: transparent;
+    color: var(--text);
 
     -moz-appearance: textfield;
     appearance: textfield;

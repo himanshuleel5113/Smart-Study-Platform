@@ -1,6 +1,8 @@
 package com.smartstudy.userservice.controller;
 
 import com.smartstudy.userservice.dto.LoginRequest;
+import com.smartstudy.userservice.dto.UpdateProfileRequest;
+import com.smartstudy.userservice.dto.ChangePasswordRequest;
 import com.smartstudy.userservice.dto.RegisterRequest;
 import com.smartstudy.userservice.dto.UserProfileResponse;
 import com.smartstudy.userservice.exception.AuthenticationException;
@@ -84,5 +86,22 @@ public class UserController {
         }
 
         return authorizationHeader.substring(7);
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<UserProfileResponse> updateProfile(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(userService.updateProfile(
+                extractBearerToken(authorizationHeader), request.name()));
+    }
+
+    @PostMapping("/password")
+    public ResponseEntity<Void> changePassword(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(extractBearerToken(authorizationHeader),
+                request.currentPassword(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 }

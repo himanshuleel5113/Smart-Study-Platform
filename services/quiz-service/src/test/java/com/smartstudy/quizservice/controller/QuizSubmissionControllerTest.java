@@ -25,6 +25,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(QuizSubmissionController.class)
 class QuizSubmissionControllerTest {
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "{\"quizId\":10,\"answers\":null}",
+            "{\"quizId\":10,\"answers\":[null]}",
+            "{not-json"
+    })
+    void malformedOrNullAnswersReturn400BeforeSubmission(String json) throws Exception {
+        mockMvc.perform(post("/api/quiz-submissions").param("userId", "1")
+                .contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").exists());
+        verify(quizSubmissionService, never()).submitQuiz(any(), any());
+    }
+
     @Autowired
     private MockMvc mockMvc;
 

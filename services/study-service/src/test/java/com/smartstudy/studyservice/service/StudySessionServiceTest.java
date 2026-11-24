@@ -17,6 +17,8 @@ import static org.mockito.Mockito.*;
 
 class StudySessionServiceTest {
 
+    private final StudySessionLock sessionLock = mock(StudySessionLock.class);
+
     @Test
     void startSessionShouldCreateNewSession() {
 
@@ -32,7 +34,7 @@ class StudySessionServiceTest {
                 "Object-oriented programming"
         );
 
-        when(studySessionRepository.findByUserIdAndEndedAtIsNull(1L))
+        when(studySessionRepository.findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(1L))
                 .thenReturn(Optional.empty());
 
         when(subjectRepository.findById(10L))
@@ -44,7 +46,7 @@ class StudySessionServiceTest {
         StudySessionService service =
                 new StudySessionService(
                         studySessionRepository,
-                        subjectRepository
+                        subjectRepository, sessionLock
                 );
 
         StudySessionRequest request = new StudySessionRequest();
@@ -59,7 +61,7 @@ class StudySessionServiceTest {
         assertNull(response.getDurationSeconds());
 
         verify(studySessionRepository)
-                .findByUserIdAndEndedAtIsNull(1L);
+                .findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(1L);
 
         verify(subjectRepository)
                 .findById(10L);
@@ -83,13 +85,13 @@ class StudySessionServiceTest {
                 Instant.now()
         );
 
-        when(studySessionRepository.findByUserIdAndEndedAtIsNull(1L))
+        when(studySessionRepository.findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(1L))
                 .thenReturn(Optional.of(activeSession));
 
         StudySessionService service =
                 new StudySessionService(
                         studySessionRepository,
-                        subjectRepository
+                        subjectRepository, sessionLock
                 );
 
         StudySessionRequest request = new StudySessionRequest();
@@ -124,7 +126,7 @@ class StudySessionServiceTest {
                 "Owned by another user"
         );
 
-        when(studySessionRepository.findByUserIdAndEndedAtIsNull(1L))
+        when(studySessionRepository.findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(1L))
                 .thenReturn(Optional.empty());
 
         when(subjectRepository.findById(10L))
@@ -133,7 +135,7 @@ class StudySessionServiceTest {
         StudySessionService service =
                 new StudySessionService(
                         studySessionRepository,
-                        subjectRepository
+                        subjectRepository, sessionLock
                 );
 
         StudySessionRequest request = new StudySessionRequest();
@@ -170,7 +172,7 @@ class StudySessionServiceTest {
                 startedAt
         );
 
-        when(studySessionRepository.findByUserIdAndEndedAtIsNull(1L))
+        when(studySessionRepository.findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(1L))
                 .thenReturn(Optional.of(session));
 
         when(studySessionRepository.save(session))
@@ -179,7 +181,7 @@ class StudySessionServiceTest {
         StudySessionService service =
                 new StudySessionService(
                         studySessionRepository,
-                        subjectRepository
+                        subjectRepository, sessionLock
                 );
 
         StudySessionResponse response =
@@ -206,13 +208,13 @@ class StudySessionServiceTest {
         SubjectRepository subjectRepository =
                 mock(SubjectRepository.class);
 
-        when(studySessionRepository.findByUserIdAndEndedAtIsNull(1L))
+        when(studySessionRepository.findFirstByUserIdAndEndedAtIsNullOrderByStartedAtAsc(1L))
                 .thenReturn(Optional.empty());
 
         StudySessionService service =
                 new StudySessionService(
                         studySessionRepository,
-                        subjectRepository
+                        subjectRepository, sessionLock
                 );
 
         IllegalStateException exception = assertThrows(
@@ -267,7 +269,7 @@ class StudySessionServiceTest {
         StudySessionService service =
                 new StudySessionService(
                         studySessionRepository,
-                        subjectRepository
+                        subjectRepository, sessionLock
                 );
 
         List<StudySessionResponse> history =

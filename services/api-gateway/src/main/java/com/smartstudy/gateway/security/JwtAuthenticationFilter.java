@@ -93,11 +93,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     userId
             );
 
-            filterChain.doFilter(
-                    request,
-                    response
-            );
-
         } catch (Exception e) {
 
             System.err.println(
@@ -111,7 +106,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     response,
                     "Invalid authentication token"
             );
+            return;
         }
+        // Failures from controllers or downstream services are not JWT failures.
+        filterChain.doFilter(request, response);
     }
 
     private void sendUnauthorized(
