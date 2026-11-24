@@ -99,11 +99,15 @@ services:
   quiz-service:
     image: ${DOCKERHUB_USER:-dineshjat18}/smart-study-quiz-service:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    volumes:
+      - ./services/quiz-service/quiz-service-1.0.0.jar:/app/app.jar:ro
     environment:
       DB_URL: jdbc:postgresql://quiz-postgres:5432/quiz_db
       DB_USERNAME: postgres
       DB_PASSWORD: ${QUIZ_DB_PASSWORD:?Set QUIZ_DB_PASSWORD in .env.aws}
-      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY:?Set AZURE_OPENAI_KEY in .env.aws}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY:-dummy-key-for-local-dev}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://studyplanneragent-resource.openai.azure.com/openai/v1}
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50.0 -Duser.timezone=UTC"
